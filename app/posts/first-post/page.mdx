@@ -1,0 +1,182 @@
+---
+title: 'Next.js 16 App Router와 Nextra로 개발 블로그 구축하기'
+date: '2025-11-18'
+description: 'Next.js 16 App Router와 Nextra를 활용하여 현대적인 개발 블로그를 구축한 과정을 공유합니다.'
+tags: ['Next.js', 'Nextra', 'React', 'TypeScript', 'Tailwind CSS']
+---
+
+# 🚀 Next.js 16 App Router와 Nextra로 개발 블로그 구축하기
+
+이 블로그를 만들면서 **Next.js 16 App Router**와 **Nextra Blog Theme**를 사용했습니다. 이 글에서는 프로젝트 구축 과정과 주요 기능들을 소개합니다.
+
+## 🎯 기술 스택 선정 이유
+
+### Next.js 16 (App Router)
+- **서버 컴포넌트**: 성능 최적화와 SEO에 유리
+- **파일 기반 라우팅**: 직관적인 프로젝트 구조
+- **최신 React 기능**: React 19의 새로운 기능 활용
+
+### Nextra
+- **MDX 지원**: 마크다운에서 React 컴포넌트 사용 가능
+- **블로그 테마**: 기본 제공되는 깔끔한 블로그 UI
+- **검색 기능**: Pagefind를 통한 전체 검색 지원
+
+### Tailwind CSS + shadcn/ui
+- **유틸리티 우선**: 빠른 스타일링
+- **재사용 가능한 컴포넌트**: shadcn/ui로 일관된 디자인 시스템
+- **다크 모드**: 자동 지원
+
+## 📁 프로젝트 구조
+
+```
+nextra-blog/
+├── app/
+│   ├── layout.tsx          # 루트 레이아웃 (네비게이션, 푸터)
+│   ├── page.tsx             # 홈페이지
+│   ├── posts/               # 블로그 포스트
+│   │   └── [slug]/page.mdx
+│   ├── tags/                # 태그 페이지
+│   │   ├── page.tsx
+│   │   └── [tag]/page.tsx
+│   └── feed.xml/            # RSS 피드
+│       └── route.ts
+├── components/
+│   └── ui/                  # shadcn/ui 컴포넌트
+├── lib/
+│   ├── posts.ts            # 포스트 관리 유틸리티
+│   └── utils.ts            # 공통 유틸리티
+└── theme.config.jsx        # Nextra 테마 설정
+```
+
+## ✨ 주요 기능
+
+### 1. MDX 기반 콘텐츠 관리
+
+블로그 포스트는 `app/posts/[slug]/page.mdx` 형식으로 관리됩니다:
+
+```mdx
+---
+title: '포스트 제목'
+date: '2025-11-18'
+description: '포스트 설명'
+tags: ['React', 'Next.js']
+---
+
+# 콘텐츠 내용
+```
+
+### 2. 동적 태그 시스템
+
+포스트의 frontmatter에 있는 태그를 자동으로 수집하여 태그 페이지를 생성합니다:
+
+```typescript
+// lib/posts.ts
+export async function getAllTags(): Promise<string[]> {
+  const allPosts = await getAllPosts()
+  const tagsSet = new Set<string>()
+
+  allPosts.forEach(post => {
+    post.tags?.forEach(tag => tagsSet.add(tag))
+  })
+
+  return Array.from(tagsSet).sort()
+}
+```
+
+### 3. Pagefind 검색 통합
+
+빌드 후 자동으로 검색 인덱스를 생성합니다:
+
+```json
+{
+  "scripts": {
+    "build": "next build",
+    "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind"
+  }
+}
+```
+
+### 4. RSS 피드
+
+`app/feed.xml/route.ts`에서 동적으로 RSS 피드를 생성합니다:
+
+```typescript
+export async function GET() {
+  const feed = new RSS({
+    title: "developjik's Dev Blog",
+    description: '웹 개발 블로그',
+    site_url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    language: 'ko',
+  })
+
+  const posts = await getAllPosts()
+  posts.forEach((post) => {
+    feed.item({
+      title: post.title,
+      description: post.description || '',
+      url: `${siteUrl}${post.route}`,
+      date: post.date,
+      categories: post.tags || []
+    })
+  })
+
+  return new Response(feed.xml({ indent: true }))
+}
+```
+
+## 🎨 커스터마이징
+
+### 커스텀 레이아웃
+
+Nextra의 기본 레이아웃 대신 완전히 커스텀한 레이아웃을 사용했습니다:
+
+- **네비게이션 바**: 로고, 링크, 검색, 테마 스위치
+- **푸터**: 브랜드 정보, 퀵 링크, 소셜 링크
+- **반응형 디자인**: 모바일 메뉴 지원
+
+### 다크 모드
+
+Tailwind CSS의 다크 모드 클래스를 활용:
+
+```tsx
+<html lang="ko" suppressHydrationWarning>
+  <Head backgroundColor={{ dark: '#0a0a0a', light: '#ffffff' }} />
+  <body>
+    {/* 콘텐츠 */}
+  </body>
+</html>
+```
+
+## 🚀 배포 준비
+
+### 환경 변수 설정
+
+```bash
+# .env.local
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+```
+
+### 빌드 및 배포
+
+```bash
+pnpm build
+pnpm start
+```
+
+Vercel, Netlify, Cloudflare Pages 등 다양한 플랫폼에 배포 가능합니다.
+
+## 📚 배운 점
+
+1. **App Router의 장점**: 서버 컴포넌트로 초기 로딩 성능이 크게 개선됨
+2. **Nextra의 편리함**: MDX로 콘텐츠와 UI를 자유롭게 결합 가능
+3. **타입 안정성**: TypeScript로 안전한 코드 작성
+4. **검색 기능**: Pagefind를 통한 빠르고 가벼운 클라이언트 사이드 검색
+
+## 🔗 참고 자료
+
+- [Next.js 공식 문서](https://nextjs.org/docs)
+- [Nextra 공식 문서](https://nextra.site)
+- [shadcn/ui](https://ui.shadcn.com)
+- [Pagefind](https://pagefind.app)
+
+블로그 구축 과정에서 궁금한 점이 있다면 언제든 댓글로 남겨주세요! 🙏
