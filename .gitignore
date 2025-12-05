@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# documents
+CLAUDE.md
+SETUP.md
+specs/
+
+# pagefind
+public/_pagefind/**
+
+# claude
+.claude/
+
+# specify
+.specify
