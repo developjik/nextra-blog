@@ -6,10 +6,85 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { MobileMenu } from './components/MobileMenu'
 import { ThemeSwitch } from '@/components/ui/theme-switch'
+import { StructuredData } from './components/StructuredData'
+import { website } from '@/lib/structuredData'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 export const metadata: Metadata = {
-  title: "developjik's Dev Blog",
-  description: '웹 개발, 프론트엔드, 백엔드 기술에 대한 developjik의 개발 블로그'
+  title: {
+    default: "developjik's Dev Blog",
+    template: "%s | developjik's Dev Blog"
+  },
+  description: '웹 개발, 프론트엔드, 백엔드 기술에 대한 developjik의 개발 블로그',
+  keywords: [
+    '웹 개발',
+    '프론트엔드',
+    'React',
+    'Next.js',
+    'TypeScript',
+    'JavaScript',
+    '개발 블로그',
+    '프로그래밍',
+    '코딩'
+  ],
+  authors: [{ name: 'developjik', url: 'https://github.com/developjik' }],
+  creator: 'developjik',
+  publisher: 'developjik',
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: '/',
+    languages: {
+      'ko-KR': '/',
+      'en': '/en'
+    }
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'ko_KR',
+    alternateLocale: 'en_US',
+    url: SITE_URL,
+    title: "developjik's Dev Blog",
+    description: '웹 개발, 프론트엔드, 백엔드 기술에 대한 developjik의 개발 블로그',
+    siteName: "developjik's Dev Blog",
+    images: [
+      {
+        url: `${SITE_URL}/og`,
+        width: 1200,
+        height: 630,
+        alt: "developjik's Dev Blog",
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "developjik's Dev Blog",
+    description: '웹 개발, 프론트엔드, 백엔드 기술에 대한 developjik의 개발 블로그',
+    images: [`${SITE_URL}/og`],
+    creator: '@developjik', // Twitter handle if available
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'your-google-verification-code', // Add when available
+    yandex: 'your-yandex-verification-code', // Add when available
+    yahoo: 'your-yahoo-verification-code', // Add when available
+  },
+  other: {
+    'theme-color': '#667eea',
+    'msapplication-TileColor': '#667eea',
+    'apple-mobile-web-app-title': "developjik's Blog",
+    'application-name': "developjik's Blog",
+  },
 }
 
 type Props = {
@@ -162,6 +237,10 @@ export default async function RootLayout({ children }: Props) {
               </div>
             </div>
           </footer>
+
+        {/* Structured Data for the website */}
+        <StructuredData data={website} />
+
         <Analytics />
       </body>
     </html>

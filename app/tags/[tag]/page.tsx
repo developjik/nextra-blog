@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { TagBadge } from '@/app/components/TagBadge'
 import { PostCard } from '@/app/components/PostCard'
 import { getTagColor } from '@/lib/tagColors'
+import { StructuredData } from '@/app/components/StructuredData'
+import { generateCollectionPageSchema, generateBreadcrumbSchema, SITE_URL } from '@/lib/structuredData'
 
 type Props = {
   params: Promise<{
@@ -22,9 +24,28 @@ export async function generateMetadata({ params }: Props) {
   const { tag } = await params
   const decodedTag = decodeURIComponent(tag)
 
+  const tagUrl = `${SITE_URL}/tags/${tag}`
+
   return {
-    title: `Posts tagged with "${decodedTag}" - Nextra Blog`,
-    description: `All posts tagged with ${decodedTag}`
+    title: `#${decodedTag} - 블로그 글 목록 | developjik's Dev Blog`,
+    description: `#${decodedTag} 태그가 적용된 모든 블로그 글을 확인하세요. 웹 개발, 프론트엔드, React, Next.js 등 다양한 주제의 기술 글이 있습니다.`,
+    keywords: [decodedTag, '블로그', '웹 개발', '프론트엔드', '기술 블로그'],
+    alternates: {
+      canonical: `/tags/${tag}`,
+    },
+    openGraph: {
+      type: 'website',
+      locale: 'ko_KR',
+      url: tagUrl,
+      title: `#${decodedTag} - 블로그 글 목록`,
+      description: `#${decodedTag} 태그가 적용된 모든 블로그 글을 확인하세요.`,
+      siteName: "developjik's Dev Blog",
+    },
+    twitter: {
+      card: 'summary',
+      title: `#${decodedTag} - 블로그 글 목록`,
+      description: `#${decodedTag} 태그가 적용된 모든 블로그 글을 확인하세요.`,
+    },
   }
 }
 
@@ -39,8 +60,27 @@ export default async function TagPage({ params }: Props) {
 
   const colors = getTagColor(decodedTag)
 
+  // Generate structured data for this tag page
+  const collectionSchema = generateCollectionPageSchema(
+    'CollectionPage',
+    `#${decodedTag} - 블로그 글 목록`,
+    `#${decodedTag} 태그가 적용된 모든 블로그 글 목록입니다. 총 ${posts.length}개의 글이 있습니다.`,
+    `/tags/${tag}`,
+    posts
+  )
+
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: SITE_URL },
+    { name: 'Tags', url: `${SITE_URL}/tags` },
+    { name: `#${decodedTag}`, url: `${SITE_URL}/tags/${tag}` },
+  ])
+
   return (
     <div className="min-h-screen">
+      {/* Structured Data */}
+      <StructuredData data={collectionSchema} />
+      <StructuredData data={breadcrumbSchema} />
+
       {/* Header Section with Tag Color */}
       <section className={`relative overflow-hidden bg-gradient-to-br ${colors.light} dark:${colors.dark} py-16 md:py-24`}>
         <div className="absolute inset-0 bg-grid-pattern opacity-10" />
