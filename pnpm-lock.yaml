@@ -69,9 +69,6 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.17
-      '@types/d3':
-        specifier: ^7.4.3
-        version: 7.4.3
       '@types/node':
         specifier: ^25.0.1
         version: 25.0.1

@@ -48,3 +48,6 @@ export function Giscus() {
 
   return <div ref={ref} className="mt-8" />
 }
+
+// Add default export for dynamic importing
+export default Giscus
