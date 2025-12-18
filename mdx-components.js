@@ -6,7 +6,8 @@ const themeComponents = getThemeComponents()
 // Custom wrapper to apply our styles
 function ArticleWrapper({ children }) {
   return (
-    <div className="prose prose-lg dark:prose-invert max-w-none
+    <div
+      className="prose prose-lg dark:prose-invert max-w-none
       prose-headings:font-bold prose-headings:tracking-tight
       prose-h1:text-4xl prose-h1:mb-8 prose-h1:mt-12
       prose-h2:text-3xl prose-h2:mb-6 prose-h2:mt-10 prose-h2:border-b prose-h2:pb-2
@@ -25,7 +26,8 @@ function ArticleWrapper({ children }) {
       prose-table:my-8 prose-table:w-full
       prose-th:bg-muted prose-th:p-3 prose-th:text-left prose-th:font-semibold
       prose-td:p-3 prose-td:border-t prose-td:border-border
-    ">
+    "
+    >
       {children}
     </div>
   )
@@ -36,6 +38,6 @@ export function useMDXComponents(components) {
   return {
     ...themeComponents,
     wrapper: ArticleWrapper,
-    ...components
+    ...components,
   }
 }
