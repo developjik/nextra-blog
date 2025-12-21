@@ -2,6 +2,7 @@
   "name": "nextra-blog",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.26.1",
   "scripts": {
     "dev": "next dev",
     "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind",
