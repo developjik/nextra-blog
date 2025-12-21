@@ -1,5 +1,7 @@
+import { env } from '~/env'
+
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const baseUrl = env.NEXT_PUBLIC_SITE_URL
 
   const robotsTxt = `# https://www.robotstxt.org/robotstxt.html
 User-agent: *
