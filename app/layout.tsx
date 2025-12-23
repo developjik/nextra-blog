@@ -2,7 +2,7 @@ import { Head } from 'nextra/components'
 import { Layout } from 'nextra-theme-blog'
 import 'nextra-theme-blog/style.css'
 import '~/app/globals.css'
-import { Footer, Navbar } from '~/_components'
+import { Footer, Navbar } from './_components'
 
 export const metadata = {
   title: 'Developjik Blog',

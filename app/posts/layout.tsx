@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Comments } from './Comments'
+import { Comments } from '~/app/_components'
 
 type Props = {
   children: ReactNode
