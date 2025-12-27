@@ -1,5 +1,5 @@
-import { glob } from 'glob'
 import { readFileSync } from 'fs'
+import { glob } from 'glob'
 import matter from 'gray-matter'
 
 interface Metadata {

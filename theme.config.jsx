@@ -1,4 +1,17 @@
+import { ScrollReveal, ScrollRevealGroup } from './app/_components'
+
 export default {
+  // MDX 요소 설정 - 컴포넌트를 block 요소로 처리하여 <p> 중첩 방지
+  elements: {
+    // ScrollReveal 컴포넌트는 항상 block 요소로 처리
+    ScrollReveal: {
+      selfClosing: false,
+    },
+    ScrollRevealGroup: {
+      selfClosing: false,
+    },
+  },
+
   // 테마 색상 및 디자인 설정
   color: {
     hue: 250, // 기본 색상 톤 (푸른색 계열)

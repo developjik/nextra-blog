@@ -10,10 +10,10 @@
  * @returns URL-safe 슬러그 문자열
  */
 export function slugifyTag(tag: string): string {
-	return tag
-		.toLowerCase()
-		.trim()
-		.replace(/\s+/g, '-') // 공백을 하이픈으로 변환
-		.replace(/[^\w\p{L}-]/gu, '') // 알파벳, 숫자, 한글, 하이픈만 유지
-		.replace(/-+/g, '-') // 중복 하이픈 제거
+  return tag
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-') // 공백을 하이픈으로 변환
+    .replace(/[^\w\p{L}-]/gu, '') // 알파벳, 숫자, 한글, 하이픈만 유지
+    .replace(/-+/g, '-') // 중복 하이픈 제거
 }

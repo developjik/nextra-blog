@@ -1,3 +1,5 @@
+export { Comments } from './Comments'
 export { Footer } from './Footer'
 export { Navbar } from './Navbar'
-export { Comments } from './Comments'
+export { ScrollProgress } from './ScrollProgress'
+export { ScrollReveal, ScrollRevealGroup } from './ScrollReveal'
