@@ -1,5 +1,6 @@
 export { Comments } from './Comments'
 export { Footer } from './Footer'
+export { JsonLd } from './JsonLd'
 export { Navbar } from './Navbar'
 export { ScrollProgress } from './ScrollProgress'
 export { ScrollReveal, ScrollRevealGroup } from './ScrollReveal'
