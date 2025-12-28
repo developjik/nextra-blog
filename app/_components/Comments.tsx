@@ -87,17 +87,6 @@ export function Comments() {
             crossOrigin="anonymous"
             async
           />
-
-          {/* 개발 환경 테스트를 위한 임시 영역 */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                💡 Giscus 댓글 위젯은 프로덕션 환경에서만 표시됩니다.
-                <br />
-                현재 개발 모드이므로 실제 댓글은 보이지 않습니다.
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
