@@ -28,8 +28,8 @@
     "rules": {
       "recommended": true,
       "a11y": {
-        "useValidLang": "off",
-        "noSvgWithoutTitle": "off"
+        "useValidLang": "warn",
+        "noSvgWithoutTitle": "warn"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off"
