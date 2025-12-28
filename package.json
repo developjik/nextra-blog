@@ -20,7 +20,7 @@
     "glob": "^13.0.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.554.0",
-    "next": "16.0.10",
+    "next": "16.1.1",
     "nextra": "^4.6.1",
     "nextra-theme-blog": "^4.6.1",
     "react": "19.2.3",
