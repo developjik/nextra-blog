@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs'
 import { glob } from 'glob'
 import matter from 'gray-matter'
+import { env } from '~/env'
 
 interface Metadata {
   title: string
@@ -54,7 +55,7 @@ async function getPostMetadata(): Promise<
  * Sitemap 생성 함수
  */
 export default async function sitemap(): Promise<SitemapEntry[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const baseUrl = env.NEXT_PUBLIC_SITE_URL
 
   // 정적 페이지 목록
   const staticPages: SitemapEntry[] = [

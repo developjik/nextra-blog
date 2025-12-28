@@ -15,8 +15,10 @@ export const env = createEnv({
    * NODE_ENV, DATABASE_URL 등 클라이언트에 노출되면 안 되는 값들
    */
   server: {
-    // 향후 서버사이드 전용 환경 변수가 필요하면 여기에 추가
-    // 예: DATABASE_URL: z.string().url(),
+    // Node.js 환경 (development, production, test)
+    NODE_ENV: z
+      .enum(['development', 'production', 'test'])
+      .default('development'),
   },
 
   /**
@@ -44,13 +46,14 @@ export const env = createEnv({
    * 프로덕션에서는 빌드 타임에 검증합니다.
    */
   runtimeEnv: {
+    // 서버 환경 변수
+    NODE_ENV: process.env.NODE_ENV,
+
     // 클라이언트 환경 변수
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_ENABLE_COMMENTS: process.env.NEXT_PUBLIC_ENABLE_COMMENTS,
     NEXT_PUBLIC_GISCUS_REPO_ID: process.env.NEXT_PUBLIC_GISCUS_REPO_ID,
     NEXT_PUBLIC_GISCUS_CATEGORY_ID: process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID,
-
-    // 서버 환경 변수 (향후 추가용)
   },
 
   /**
