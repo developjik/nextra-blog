@@ -553,9 +553,7 @@ body {
   box-shadow:
     0 8px 30px rgba(99, 102, 241, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.06);
-  transform:
-    translateY(-4px)
-    scale(1.01);
+  transform: translateY(-4px) scale(1.01);
 }
 
 .dark .card-minimal:hover {
@@ -631,11 +629,7 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 9999px;
-  background: linear-gradient(
-    135deg,
-    rgb(99, 102, 241),
-    rgb(168, 85, 247)
-  );
+  background: linear-gradient(135deg, rgb(99, 102, 241), rgb(168, 85, 247));
   color: white;
   box-shadow:
     0 2px 8px rgba(99, 102, 241, 0.3),
@@ -651,11 +645,7 @@ body {
   box-shadow:
     0 4px 12px rgba(99, 102, 241, 0.4),
     0 2px 6px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(
-    135deg,
-    rgb(99, 102, 241),
-    rgb(192, 132, 252)
-  );
+  background: linear-gradient(135deg, rgb(99, 102, 241), rgb(192, 132, 252));
 }
 
 /* 기술 스택별 색상 배지 */
@@ -708,11 +698,7 @@ body {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgb(99, 102, 241),
-    rgb(168, 85, 247)
-  );
+  background: linear-gradient(90deg, rgb(99, 102, 241), rgb(168, 85, 247));
   transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
