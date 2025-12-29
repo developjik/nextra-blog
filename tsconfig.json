@@ -26,11 +26,10 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "**/*.mts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    "next.config.mjs",
-    "app/posts/get-posts.js"
+    "next.config.mjs"
   ],
   "exclude": ["node_modules"]
 }
