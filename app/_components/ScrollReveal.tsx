@@ -61,11 +61,11 @@ export function ScrollReveal({
   }, [delay, threshold])
 
   const variantClasses = {
-    up: 'scroll-reveal',
-    down: 'scroll-reveal', // 아래에서 위는 기본과 동일
-    left: 'scroll-reveal-left',
-    right: 'scroll-reveal-right',
-    scale: 'scroll-reveal-scale',
+    up: 'scroll-reveal-swiss',
+    down: 'scroll-reveal-swiss',
+    left: 'scroll-reveal-swiss',
+    right: 'scroll-reveal-swiss',
+    scale: 'scroll-reveal-swiss',
   }
 
   return (
@@ -136,11 +136,11 @@ export function ScrollRevealGroup({
   }, [baseDelay, stagger, threshold])
 
   const variantClasses = {
-    up: 'scroll-reveal',
-    down: 'scroll-reveal',
-    left: 'scroll-reveal-left',
-    right: 'scroll-reveal-right',
-    scale: 'scroll-reveal-scale',
+    up: 'scroll-reveal-swiss',
+    down: 'scroll-reveal-swiss',
+    left: 'scroll-reveal-swiss',
+    right: 'scroll-reveal-swiss',
+    scale: 'scroll-reveal-swiss',
   }
 
   return (
