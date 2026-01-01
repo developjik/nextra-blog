@@ -27,5 +27,6 @@
   },
   "[mdx]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+  "workbench.panel.defaultLocation": "right"
 }
