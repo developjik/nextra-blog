@@ -25,6 +25,7 @@
     "nextra-theme-blog": "^4.6.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-error-boundary": "^6.0.1",
     "zod": "^4.2.1"
   },
   "devDependencies": {

@@ -13,7 +13,7 @@ import { Navbar as NextraNavbar, ThemeSwitch } from 'nextra-theme-blog'
  *
  * NOTE: Server Component로 유지
  */
-export async function Navbar() {
+export async function SwissNavbar() {
   return (
     <NextraNavbar pageMap={await getPageMap()}>
       {/* Logo - 왼쪽 정렬 */}
