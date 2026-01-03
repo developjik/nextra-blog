@@ -1,0 +1,808 @@
+---
+title: 'React Concurrent Rendering 완벽 가이드'
+date: '2025-01-03'
+description: 'React Concurrent Rendering은 React 18에서 도입된 새로운 렌더링 메커니즘으로, UI 업데이트의 우선순위를 조정하여 사용자 경험을 개선합니다. 이 가이드에서 Concurrent Rendering의 핵심 개념과 실전 활용법을 알아봅니다.'
+tags: ['React', 'Concurrent Rendering', '성능 최적화', 'startTransition', 'Suspense']
+---
+
+import { JsonLd } from '~/app/_components'
+
+<JsonLd
+  metadata={{
+    title: 'React Concurrent Rendering 완벽 가이드',
+    description: 'React Concurrent Rendering은 React 18에서 도입된 새로운 렌더링 메커니즘으로, UI 업데이트의 우선순위를 조정하여 사용자 경험을 개선합니다. 이 가이드에서 Concurrent Rendering의 핵심 개념과 실전 활용법을 알아봅니다.',
+    date: '2025-01-03',
+    slug: 'react-concurrent-rendering',
+    tags: ['React', 'Concurrent Rendering', '성능 최적화', 'startTransition', 'Suspense'],
+  }}
+/>
+
+# React Concurrent Rendering 이해하기
+
+## 개요
+
+React Concurrent Rendering은 React 18에서 도입된 새로운 렌더링 메커니즘으로, UI 업데이트의 우선순위를 조정하여 사용자 경험을 개선합니다. 이 기능을 활용하면 중요한 업데이트는 즉시 처리하고, 덜 중요한 업데이트는 백그라운드에서 처리하여 애플리케이션의 반응성을 크게 향상시킬 수 있습니다.
+
+기존 React의 동기적 렌더링 방식과 달리, Concurrent Rendering은 렌더링 작업을 중단하고 재개할 수 있어 더 유연한 UI 업데이트가 가능합니다.
+
+## 배경
+
+### 왜 필요한가?
+
+기존 React는 렌더링 작업을 한 번 시작하면 완료할 때까지 중단할 수 없었습니다. 이는 다음과 같은 문제를 야기했습니다:
+
+**복잡한 대시보드 예시**
+- 사용자가 검색창에 텍스트를 입력할 때
+- 동시에 수천 개의 데이터를 렌더링하는 테이블이 업데이트될 때
+- 입력이 느려지거나 화면이 멈추는 현상 발생
+
+```javascript
+// 기존 방식의 문제점
+function Dashboard() {
+  const [searchText, setSearchText] = useState('');
+  const [data, setData] = useState(largeDataset);
+
+  // 입력과 데이터 필터링이 동시에 발생
+  const filteredData = data.filter(item =>
+    item.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  return (
+    <div>
+      <input
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+        // 🐌 입력이 느려짐
+      />
+      <DataTable data={filteredData} />
+      {/* 📊 수천 개의 행을 렌더링하느라 전체 UI가 블로킹됨 */}
+    </div>
+  );
+}
+```
+
+**실무에서 겪는 문제**
+- OMS/WMS 같은 대량 데이터 처리 시스템에서 검색/필터링 시 UI 응답 지연
+- 복잡한 폼에서 타이핑 지연
+- 차트나 대시보드 업데이트 중 사용자 인터랙션 차단
+
+### 등장 이전의 방식
+
+React 18 이전에는 이런 문제를 해결하기 위해:
+
+```javascript
+// 방법 1: debounce/throttle (불완전한 해결책)
+const debouncedSearch = debounce(setSearchText, 300);
+
+// 방법 2: setTimeout으로 수동 우선순위 조정
+setTimeout(() => {
+  setHeavyData(newData);
+}, 0);
+
+// 방법 3: Web Worker 사용 (복잡도 증가)
+const worker = new Worker('data-processor.js');
+```
+
+이러한 방법들은:
+- 개발자가 직접 우선순위를 관리해야 함
+- 코드 복잡도가 증가
+- 모든 상황에서 일관되게 작동하지 않음
+
+## 동작 원리
+
+### 핵심 메커니즘
+
+Concurrent Rendering은 다음 3단계로 작동합니다:
+
+1. **렌더링 중단 가능성**: 렌더링 작업을 작은 단위로 나누어 필요 시 중단하고 재개할 수 있습니다.
+
+2. **우선순위 기반 스케줄링**: 업데이트에 우선순위를 부여하여 중요한 작업을 먼저 처리합니다.
+
+3. **백그라운드 준비**: 덜 중요한 업데이트는 백그라운드에서 준비하여 사용자 경험을 해치지 않습니다.
+
+### 시각적 예시
+
+```
+[기존 동기 렌더링]
+사용자 입력 → [렌더링 작업 ████████████] → 화면 업데이트
+                 ↑ 중단 불가, 모든 작업 완료 필요
+
+[Concurrent 렌더링]
+사용자 입력 → [긴급 작업 ██] → 화면 즉시 업데이트
+                        ↓
+              [백그라운드 작업 ░░░░░░] → 나중에 완료
+```
+
+### 코드로 이해하기
+
+React 18의 `createRoot`를 사용하면 자동으로 Concurrent 모드가 활성화됩니다:
+
+```javascript
+// React 18 - Concurrent Mode 활성화
+import { createRoot } from 'react-dom/client';
+
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
+```
+
+```javascript
+// React 17 이하 - 레거시 동기 모드
+import ReactDOM from 'react-dom';
+
+ReactDOM.render(<App />, document.getElementById('root'));
+```
+
+## 주요 특징
+
+### 특징 1: 자동 배칭 (Automatic Batching)
+
+React 18에서는 **모든 업데이트**가 자동으로 배칭됩니다.
+
+**React 17 이하**
+```javascript
+function handleClick() {
+  // Promise, setTimeout, 네이티브 이벤트에서는 배칭 안됨
+  setTimeout(() => {
+    setCount(c => c + 1);  // 리렌더링 1
+    setFlag(f => !f);      // 리렌더링 2
+    // 총 2번 리렌더링
+  }, 1000);
+}
+```
+
+**React 18 (Concurrent Mode)**
+```javascript
+function handleClick() {
+  // 어디서든 배칭됨
+  setTimeout(() => {
+    setCount(c => c + 1);
+    setFlag(f => !f);
+    // 총 1번 리렌더링 ✨
+  }, 1000);
+}
+```
+
+**실무 예시: 폼 제출 최적화**
+```javascript
+async function handleSubmit(formData) {
+  // API 호출 후 여러 상태 업데이트
+  const result = await saveOrder(formData);
+
+  // React 18에서는 이 모든 업데이트가 하나로 배칭됨
+  setOrders(prev => [...prev, result]);
+  setIsLoading(false);
+  setSuccess(true);
+  setFormData(initialState);
+  // 단 1번만 리렌더링! 🚀
+}
+```
+
+### 특징 2: Transitions (startTransition)
+
+긴급하지 않은 업데이트를 표시하여 우선순위를 낮춥니다.
+
+```javascript
+import { startTransition } from 'react';
+
+function SearchPage() {
+  const [searchText, setSearchText] = useState('');
+  const [results, setResults] = useState([]);
+
+  function handleChange(e) {
+    // 긴급 업데이트: 입력 필드는 즉시 반영
+    setSearchText(e.target.value);
+
+    // 비긴급 업데이트: 검색 결과는 백그라운드에서 처리
+    startTransition(() => {
+      const filtered = performExpensiveSearch(e.target.value);
+      setResults(filtered);
+    });
+  }
+
+  return (
+    <div>
+      <input value={searchText} onChange={handleChange} />
+      {/* 입력은 항상 부드럽게 동작 ✨ */}
+
+      <SearchResults items={results} />
+      {/* 무거운 렌더링이지만 입력을 방해하지 않음 */}
+    </div>
+  );
+}
+```
+
+**useTransition 훅 사용**
+```javascript
+import { useTransition } from 'react';
+
+function FilterList({ items }) {
+  const [isPending, startTransition] = useTransition();
+  const [filter, setFilter] = useState('');
+  const [displayedItems, setDisplayedItems] = useState(items);
+
+  function handleFilterChange(value) {
+    setFilter(value);
+
+    startTransition(() => {
+      // 무거운 필터링 작업
+      const filtered = items.filter(item =>
+        item.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setDisplayedItems(filtered);
+    });
+  }
+
+  return (
+    <div>
+      <input
+        value={filter}
+        onChange={(e) => handleFilterChange(e.target.value)}
+      />
+
+      {isPending && <Spinner />}
+      {/* 로딩 표시로 UX 개선 */}
+
+      <div style={{ opacity: isPending ? 0.5 : 1 }}>
+        {displayedItems.map(item => (
+          <Item key={item.id} {...item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### 특징 3: Suspense for Data Fetching
+
+데이터 로딩 상태를 선언적으로 관리합니다.
+
+```javascript
+import { Suspense } from 'react';
+
+function OrderManagementSystem() {
+  return (
+    <div>
+      <h1>주문 관리</h1>
+
+      <Suspense fallback={<OrdersLoading />}>
+        <OrderList />
+      </Suspense>
+
+      <Suspense fallback={<StatsLoading />}>
+        <OrderStats />
+      </Suspense>
+    </div>
+  );
+}
+
+// OrderList와 OrderStats가 독립적으로 로딩됨
+// 하나가 느려도 다른 것은 표시 가능
+```
+
+**React Query/SWR와 함께 사용**
+```javascript
+import { useQuery } from '@tanstack/react-query';
+import { Suspense } from 'react';
+
+function OrderList() {
+  // suspense: true 옵션으로 Suspense 활성화
+  const { data } = useQuery({
+    queryKey: ['orders'],
+    queryFn: fetchOrders,
+    suspense: true,
+  });
+
+  return (
+    <div>
+      {data.orders.map(order => (
+        <OrderItem key={order.id} order={order} />
+      ))}
+    </div>
+  );
+}
+
+// 사용
+<Suspense fallback={<Loading />}>
+  <OrderList />
+</Suspense>
+```
+
+### 특징 4: useDeferredValue
+
+값의 업데이트를 지연시켜 성능을 최적화합니다.
+
+```javascript
+import { useDeferredValue, useMemo } from 'react';
+
+function ProductSearch({ searchQuery }) {
+  // searchQuery는 즉시 업데이트
+  // deferredQuery는 지연 업데이트 (덜 긴급)
+  const deferredQuery = useDeferredValue(searchQuery);
+
+  // deferredQuery를 사용한 무거운 계산
+  const results = useMemo(() =>
+    searchProducts(deferredQuery),
+    [deferredQuery]
+  );
+
+  return (
+    <div>
+      <input
+        value={searchQuery}
+        // 타이핑은 항상 부드럽게 ✨
+      />
+
+      {/* 검색 결과는 지연되어 렌더링 */}
+      <div style={{ opacity: deferredQuery !== searchQuery ? 0.5 : 1 }}>
+        {results.map(product => (
+          <ProductCard key={product.id} {...product} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## 실제 사용 사례
+
+### 사례 1: 대용량 데이터 테이블 (OMS/WMS)
+
+```javascript
+import { useState, useTransition } from 'react';
+
+function WarehouseInventory() {
+  const [isPending, startTransition] = useTransition();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+  const [displayedItems, setDisplayedItems] = useState(inventoryData);
+
+  function handleSearch(value) {
+    // 검색어 입력은 즉시 반영
+    setSearchTerm(value);
+
+    // 데이터 필터링은 백그라운드에서
+    startTransition(() => {
+      const filtered = inventoryData.filter(item =>
+        item.name.toLowerCase().includes(value.toLowerCase()) ||
+        item.sku.toLowerCase().includes(value.toLowerCase())
+      );
+      setDisplayedItems(filtered);
+    });
+  }
+
+  function handleSort(key) {
+    startTransition(() => {
+      const sorted = [...displayedItems].sort((a, b) => {
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+          return b[key] > a[key] ? 1 : -1;
+        }
+        return a[key] > b[key] ? 1 : -1;
+      });
+      setDisplayedItems(sorted);
+      setSortConfig({
+        key,
+        direction: sortConfig.direction === 'asc' ? 'desc' : 'asc'
+      });
+    });
+  }
+
+  return (
+    <div>
+      <input
+        type="text"
+        value={searchTerm}
+        onChange={(e) => handleSearch(e.target.value)}
+        placeholder="재고 검색..."
+        // 항상 부드러운 타이핑 경험 ✨
+      />
+
+      {isPending && (
+        <div className="loading-indicator">
+          검색 중...
+        </div>
+      )}
+
+      <table style={{ opacity: isPending ? 0.6 : 1 }}>
+        <thead>
+          <tr>
+            <th onClick={() => handleSort('name')}>품명</th>
+            <th onClick={() => handleSort('sku')}>SKU</th>
+            <th onClick={() => handleSort('quantity')}>수량</th>
+            <th onClick={() => handleSort('location')}>위치</th>
+          </tr>
+        </thead>
+        <tbody>
+          {displayedItems.map(item => (
+            <tr key={item.id}>
+              <td>{item.name}</td>
+              <td>{item.sku}</td>
+              <td>{item.quantity}</td>
+              <td>{item.location}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+```
+
+### 사례 2: 탭 전환 최적화
+
+```javascript
+import { useState, useTransition, Suspense } from 'react';
+
+function OrderDashboard() {
+  const [tab, setTab] = useState('pending');
+  const [isPending, startTransition] = useTransition();
+
+  function handleTabChange(newTab) {
+    startTransition(() => {
+      setTab(newTab);
+    });
+  }
+
+  return (
+    <div>
+      <nav>
+        <button
+          onClick={() => handleTabChange('pending')}
+          disabled={isPending}
+        >
+          대기 중 주문
+        </button>
+        <button
+          onClick={() => handleTabChange('processing')}
+          disabled={isPending}
+        >
+          처리 중 주문
+        </button>
+        <button
+          onClick={() => handleTabChange('completed')}
+          disabled={isPending}
+        >
+          완료된 주문
+        </button>
+      </nav>
+
+      {/* 탭 전환이 부드럽고, 각 탭은 독립적으로 로딩 */}
+      <Suspense fallback={<TabLoading />}>
+        <div style={{ opacity: isPending ? 0.7 : 1 }}>
+          {tab === 'pending' && <PendingOrders />}
+          {tab === 'processing' && <ProcessingOrders />}
+          {tab === 'completed' && <CompletedOrders />}
+        </div>
+      </Suspense>
+    </div>
+  );
+}
+```
+
+### 사례 3: 실시간 필터링 + 정렬
+
+```javascript
+import { useMemo, useDeferredValue } from 'react';
+
+function OrderList({ orders }) {
+  const [filters, setFilters] = useState({
+    status: 'all',
+    dateRange: 'all',
+    customer: ''
+  });
+
+  // 필터 입력은 즉시 반영
+  // 실제 필터링 계산은 지연
+  const deferredFilters = useDeferredValue(filters);
+
+  // 무거운 필터링 + 정렬 로직
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+
+    if (deferredFilters.status !== 'all') {
+      result = result.filter(order => order.status === deferredFilters.status);
+    }
+
+    if (deferredFilters.customer) {
+      result = result.filter(order =>
+        order.customerName.toLowerCase().includes(
+          deferredFilters.customer.toLowerCase()
+        )
+      );
+    }
+
+    // 날짜 필터링
+    if (deferredFilters.dateRange !== 'all') {
+      const today = new Date();
+      result = result.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        const daysDiff = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+
+        switch (deferredFilters.dateRange) {
+          case 'today': return daysDiff === 0;
+          case 'week': return daysDiff <= 7;
+          case 'month': return daysDiff <= 30;
+          default: return true;
+        }
+      });
+    }
+
+    return result.sort((a, b) =>
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+  }, [deferredFilters, orders]);
+
+  const isStale = filters !== deferredFilters;
+
+  return (
+    <div>
+      {/* 필터 UI - 항상 빠르게 반응 */}
+      <OrderFilters
+        filters={filters}
+        onChange={setFilters}
+      />
+
+      {/* 필터링된 결과 - 약간 지연되지만 UI는 블로킹 안됨 */}
+      <div style={{ opacity: isStale ? 0.6 : 1 }}>
+        {isStale && <div className="updating">업데이트 중...</div>}
+        {filteredOrders.map(order => (
+          <OrderCard key={order.id} order={order} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## 장점과 한계
+
+### 장점
+
+- ✅ **향상된 UX**: 사용자 인터랙션이 항상 즉각적으로 반응합니다.
+  ```javascript
+  // 입력 필드가 절대 느려지지 않음
+  <input onChange={handleChange} />
+  ```
+
+- ✅ **자동 최적화**: 개발자가 명시적으로 최적화하지 않아도 React가 자동으로 우선순위를 관리합니다.
+  ```javascript
+  // React 18에서는 자동으로 배칭됨
+  setCount(1);
+  setName('John');
+  // 1번만 리렌더링
+  ```
+
+- ✅ **점진적 도입**: 기존 코드를 수정하지 않고도 Concurrent 기능을 점진적으로 적용할 수 있습니다.
+  ```javascript
+  // createRoot만 변경하면 기본 기능 활성화
+  const root = createRoot(rootElement);
+  ```
+
+- ✅ **더 나은 로딩 경험**: Suspense를 활용한 선언적 로딩 상태 관리가 가능합니다.
+  ```javascript
+  <Suspense fallback={<Loading />}>
+    <HeavyComponent />
+  </Suspense>
+  ```
+
+### 한계
+
+- ⚠️ **학습 곡선**: `startTransition`, `useDeferredValue` 등 새로운 개념을 이해해야 합니다.
+  - **해결책**: 먼저 자동 배칭만 활용하고, 필요할 때 점진적으로 도입하세요.
+
+- ⚠️ **디버깅 복잡도**: 비동기적 렌더링으로 인해 디버깅이 어려울 수 있습니다.
+  ```javascript
+  // React DevTools의 Profiler 활용 필수
+  // startTransition으로 감싼 부분은 별도로 표시됨
+  ```
+
+- ⚠️ **과도한 사용 위험**: 모든 업데이트를 transition으로 감싸면 오히려 성능이 저하될 수 있습니다.
+  ```javascript
+  // ❌ 불필요한 사용
+  startTransition(() => {
+    setSimpleFlag(true); // 간단한 업데이트에는 불필요
+  });
+
+  // ✅ 적절한 사용
+  startTransition(() => {
+    setHeavyData(processLargeDataset()); // 무거운 계산에만 사용
+  });
+  ```
+
+- ⚠️ **오래된 라이브러리 호환성**: React 18 미지원 라이브러리는 업데이트가 필요할 수 있습니다.
+
+### 트레이드오프
+
+**언제 사용해야 하는가**
+- 대량의 데이터를 렌더링하는 테이블/리스트
+- 복잡한 필터링/정렬 기능
+- 실시간 검색 기능
+- 무거운 차트/그래프 렌더링
+- 탭 전환이 많은 대시보드
+
+**언제 피해야 하는가**
+- 간단한 폼 (오버엔지니어링)
+- 정적 콘텐츠가 주인 페이지
+- 성능 문제가 없는 컴포넌트
+- 빠른 프로토타입 단계
+
+## 마이그레이션 가이드
+
+### 1단계: React 18로 업그레이드
+
+```bash
+npm install react@18 react-dom@18
+# 또는
+pnpm add react@18 react-dom@18
+```
+
+### 2단계: createRoot로 변경
+
+```javascript
+// Before (React 17)
+import ReactDOM from 'react-dom';
+ReactDOM.render(<App />, document.getElementById('root'));
+
+// After (React 18)
+import { createRoot } from 'react-dom/client';
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
+```
+
+### 3단계: 타입 업데이트 (TypeScript 사용 시)
+
+```bash
+npm install --save-dev @types/react@18 @types/react-dom@18
+```
+
+```typescript
+// tsconfig.json
+{
+  "compilerOptions": {
+    "types": ["react/next", "react-dom/next"]
+  }
+}
+```
+
+### 4단계: 점진적 기능 도입
+
+```javascript
+// 1. 자동 배칭 (별도 작업 없이 자동 활성화)
+// 2. 성능 문제가 있는 곳에 startTransition 적용
+// 3. Suspense를 사용한 데이터 로딩 개선 (선택)
+```
+
+## 실전 팁
+
+### 팁 1: isPending으로 로딩 표시
+
+```javascript
+function DataTable() {
+  const [isPending, startTransition] = useTransition();
+  const [data, setData] = useState([]);
+
+  function handleSort(key) {
+    startTransition(() => {
+      setData(sortData(data, key));
+    });
+  }
+
+  return (
+    <div>
+      {isPending && <ProgressBar />}
+      <table className={isPending ? 'opacity-50' : ''}>
+        {/* 테이블 내용 */}
+      </table>
+    </div>
+  );
+}
+```
+
+### 팁 2: startTransition vs useDeferredValue 선택
+
+```javascript
+// startTransition: 상태 업데이트를 제어할 수 있을 때
+function Component1() {
+  const [data, setData] = useState([]);
+
+  function handleClick() {
+    startTransition(() => {
+      setData(heavyComputation());
+    });
+  }
+}
+
+// useDeferredValue: props로 받은 값을 지연시킬 때
+function Component2({ searchQuery }) {
+  const deferredQuery = useDeferredValue(searchQuery);
+  // deferredQuery 사용
+}
+```
+
+### 팁 3: Suspense 경계 설정
+
+```javascript
+// ✅ 좋은 예: 독립적인 Suspense 경계
+<div>
+  <Suspense fallback={<HeaderSkeleton />}>
+    <Header />
+  </Suspense>
+
+  <Suspense fallback={<ContentSkeleton />}>
+    <MainContent />
+  </Suspense>
+
+  <Suspense fallback={<SidebarSkeleton />}>
+    <Sidebar />
+  </Suspense>
+</div>
+
+// ❌ 나쁜 예: 전체를 하나의 Suspense로
+<Suspense fallback={<FullPageSkeleton />}>
+  <Header />
+  <MainContent />
+  <Sidebar />
+</Suspense>
+// 하나라도 느리면 전체가 대기
+```
+
+### 팁 4: React DevTools Profiler 활용
+
+```javascript
+// Profiler로 성능 측정
+import { Profiler } from 'react';
+
+function onRender(id, phase, actualDuration) {
+  console.log(`${id} (${phase}) took ${actualDuration}ms`);
+}
+
+<Profiler id="OrderList" onRender={onRender}>
+  <OrderList />
+</Profiler>
+```
+
+## 관련 개념
+
+### useTransition vs setTimeout
+
+```javascript
+// setTimeout: 단순 지연, React의 최적화 없음
+setTimeout(() => {
+  setData(newData);
+}, 0);
+
+// useTransition: React의 우선순위 스케줄러 활용
+startTransition(() => {
+  setData(newData);
+});
+```
+
+### Suspense vs 조건부 렌더링
+
+```javascript
+// 조건부 렌더링: 명령적
+{isLoading ? <Loading /> : <Content />}
+
+// Suspense: 선언적
+<Suspense fallback={<Loading />}>
+  <Content />
+</Suspense>
+```
+
+## 더 알아보기
+
+**공식 문서**
+- [React 18 공식 문서](https://react.dev/blog/2022/03/29/react-v18)
+- [Concurrent Features](https://react.dev/learn/concurrent-features)
+
+**심화 학습**
+- [useTransition 상세 가이드](https://react.dev/reference/react/useTransition)
+- [Suspense for Data Fetching](https://react.dev/reference/react/Suspense)
+- [useDeferredValue 사용법](https://react.dev/reference/react/useDeferredValue)
+
+**실습 자료**
+- [React 18 데모 앱](https://github.com/reactwg/react-18/discussions)
+- [Concurrent Mode 샘플](https://codesandbox.io/s/concurrent-ui-patterns)
+
+**성능 최적화**
+- [React DevTools Profiler 가이드](https://react.dev/learn/react-developer-tools)
+- [성능 측정 베스트 프랙티스](https://web.dev/react/)
