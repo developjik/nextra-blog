@@ -45,12 +45,12 @@
     --text-h3: clamp(1.25rem, 3vw, 2rem);
     --text-h4: clamp(1rem, 2.5vw, 1.5rem);
     --text-body: clamp(0.875rem, 1.2vw, 1rem);
-    --text-meta: clamp(0.625rem, 0.8vw, 0.75rem);
+    --text-meta: clamp(0.75rem, 0.8vw, 0.875rem);
 
     /* Line Height */
     --leading-hero: 0.95;
     --leading-heading: 1.1;
-    --leading-body: 1.7;
+    --leading-body: 1.6;
     --leading-meta: 1.4;
 
     /* Letter Spacing */
@@ -258,7 +258,7 @@
   width: 0;
   height: 1px;
   background-color: var(--color-accent);
-  transition: width var(--transition-base);
+  transition: width var(--transition-fast);
 }
 
 .link-swiss:hover {
@@ -279,13 +279,28 @@
 
 .card-swiss:hover {
   border-color: var(--color-accent);
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  transform: translateY(-8px);
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.12);
 }
 
 .dark .card-swiss:hover {
   border-color: var(--color-accent);
-  box-shadow: 0 20px 40px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 32px 64px rgba(255, 255, 255, 0.12);
+}
+
+.dark .card-swiss:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 32px 64px rgba(255, 255, 255, 0.12);
+}
+
+.card-swiss .tag-swiss {
+  transition: all var(--transition-fast);
+}
+
+.card-swiss:hover .tag-swiss {
+  background-color: var(--color-accent);
+  color: var(--swiss-white);
+  border-color: var(--color-accent);
 }
 
 /* Swiss Button */
@@ -569,7 +584,8 @@
 }
 
 .dark .prose code {
-  background-color: var(--swiss-charcoal);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #e0e0e0;
 }
 
 .prose pre {
@@ -580,8 +596,8 @@
 }
 
 .dark .prose pre {
-  background-color: var(--swiss-charcoal);
-  border-color: var(--swiss-black);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .prose blockquote {
@@ -692,6 +708,19 @@ kbd.kbd-swiss {
   background: var(--swiss-charcoal);
   border-color: var(--swiss-black);
   color: var(--swiss-white);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
 }
 
 /* =====================================================

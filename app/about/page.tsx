@@ -1,15 +1,8 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
-
-export const metadata: Metadata = {
-  title: 'About - developjik',
-  description: 'developjik 개발자 소개 및 기술 스택, 프로젝트 경험',
-}
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen">
-      {/* Header Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-950 dark:to-indigo-950 py-16 md:py-24">
         <div className="absolute inset-0 bg-grid-pattern opacity-10" />
         <div className="max-w-4xl mx-auto px-4 relative z-10">
@@ -24,12 +17,10 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Content Section */}
       <section className="max-w-4xl mx-auto px-4 py-16">
         <div className="space-y-12">
-          {/* Introduction */}
           <div className="prose dark:prose-invert max-w-none">
-            <h2 className="text-3xl font-bold mb-6">👋 소개</h2>
+            <h2 className="text-3xl font-bold mb-6">소개</h2>
             <p className="text-lg leading-relaxed text-muted-foreground">
               저는 사용자 경험을 중요하게 생각하며, 깔끔하고 유지보수하기 좋은
               코드를 작성하기 위해 노력하는 프론트엔드 개발자입니다. React와
@@ -39,11 +30,9 @@ export default function AboutPage() {
             </p>
           </div>
 
-          {/* Tech Stack */}
           <div>
-            <h2 className="text-3xl font-bold mb-6">🛠️ 기술 스택</h2>
+            <h2 className="text-3xl font-bold mb-6">기술 스택</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Frontend */}
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <span className="text-2xl">💻</span>
@@ -69,7 +58,6 @@ export default function AboutPage() {
                 </ul>
               </div>
 
-              {/* State Management & APIs */}
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <span className="text-2xl">🔄</span>
@@ -95,7 +83,6 @@ export default function AboutPage() {
                 </ul>
               </div>
 
-              {/* Build Tools & Testing */}
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <span className="text-2xl">🧪</span>
@@ -121,7 +108,6 @@ export default function AboutPage() {
                 </ul>
               </div>
 
-              {/* Deployment & Tools */}
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <span className="text-2xl">🚀</span>
@@ -149,9 +135,8 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Interests */}
           <div>
-            <h2 className="text-3xl font-bold mb-6">🎯 관심 분야</h2>
+            <h2 className="text-3xl font-bold mb-6">관심 분야</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 rounded-lg border bg-card text-center">
                 <div className="text-3xl mb-2">🎨</div>
@@ -177,9 +162,8 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Contact */}
           <div>
-            <h2 className="text-3xl font-bold mb-6">📬 연락하기</h2>
+            <h2 className="text-3xl font-bold mb-6">연락하기</h2>
             <div className="p-6 rounded-lg border bg-card">
               <p className="text-lg text-muted-foreground mb-6">
                 프로젝트 협업, 기술 문의, 또는 그냥 인사하고 싶으시다면 언제든

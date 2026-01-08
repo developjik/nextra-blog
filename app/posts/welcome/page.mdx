@@ -5,7 +5,7 @@ description: '안녕하세요! 웹 개발에 대한 경험과 학습을 공유�
 tags: ['소개', 'Blog', '개발']
 ---
 
-import { JsonLd } from '~/app/_components'
+import { JsonLd, ShareButtons, TableOfContents } from '~/app/_components'
 
 <JsonLd
   metadata={{
@@ -15,6 +15,22 @@ import { JsonLd } from '~/app/_components'
     slug: 'welcome',
     tags: ['소개', 'Blog', '개발'],
   }}
+/>
+
+<ShareButtons
+  title="developjik 개발 블로그를 시작하며"
+  url="https://yourdomain.com/posts/welcome"
+/>
+
+<TableOfContents
+  headings={[
+    { id: '안녕하세요-developjik입니다', text: '안녕하세요, developjik입니다!', level: 1 },
+    { id: '블로그를-시작한-이유', text: '블로그를 시작한 이유', level: 2 },
+    { id: '주요-관심사', text: '주요 관심사', level: 2 },
+    { id: '블로그에서-다룰-내용', text: '블로그에서 다룰 내용', level: 2 },
+    { id: '블로그-기술-스택', text: '블로그 기술 스택', level: 2 },
+    { id: '연락하기', text: '연락하기', level: 2 },
+  ]}
 />
 
 # 👋 안녕하세요, developjik입니다!

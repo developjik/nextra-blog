@@ -1,14 +1,11 @@
 ---
-title: "모든 태그"
-description: "블로그의 모든 태그를 탐색해보세요"
+title: '모든 태그'
+description: '블로그의 모든 태그를 탐색해보세요'
 ---
 
 import { ScrollReveal } from '~/app/_components'
-import { TagCloud } from './_components/TagCloud'
-import { getAllTags } from './lib/get-all-tags'
 
 <div className="min-h-screen">
-  {/* Header Section */}
   <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950 py-20 md:py-28">
     <div className="absolute inset-0 bg-grid-pattern opacity-30" />
     <div className="max-w-4xl mx-auto px-4 relative z-10">
@@ -31,18 +28,57 @@ import { getAllTags } from './lib/get-all-tags'
     </div>
   </section>
 
-  {/* Tag Cloud Section */}
   <section className="py-16 bg-white dark:bg-slate-950">
     <div className="max-w-6xl mx-auto px-4">
       <ScrollReveal variant="up" delay={200}>
         <div className="card-minimal p-8 md:p-12">
-          <TagCloud tags={await getAllTags()} />
+          <div className="flex flex-wrap gap-3 justify-center">
+            <a href="#javascript" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              JavaScript
+            </a>
+            <a href="#react" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              React
+            </a>
+            <a href="#nextjs" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+              Next.js
+            </a>
+            <a href="#typescript" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+              TypeScript
+            </a>
+            <a href="#frontend" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              Frontend
+            </a>
+            <a href="#blog" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+              Blog
+            </a>
+            <a href="#개발" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+              개발
+            </a>
+            <a href="#소개" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+              소개
+            </a>
+            <a href="#aws" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-orange-600"></span>
+              AWS
+            </a>
+            <a href="#iam" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-orange-700"></span>
+              IAM
+            </a>
+          </div>
         </div>
       </ScrollReveal>
     </div>
   </section>
 
-  {/* Tip Section */}
   <section className="py-12 bg-slate-50 dark:bg-slate-900">
     <div className="max-w-4xl mx-auto px-4">
       <ScrollReveal variant="scale" delay={300}>
@@ -53,7 +89,9 @@ import { getAllTags } from './lib/get-all-tags'
             </svg>
             <span className="font-medium">팁:</span>
             <span>특정 주제를 찾고 계신가요?</span>
-            <kbd className="px-2 py-1 text-sm font-mono bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">K</kbd>
+            <kbd className="px-2 py-1 text-sm font-mono bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+              K
+            </kbd>
             <span>키를 눌러 검색해보세요!</span>
           </div>
         </div>
