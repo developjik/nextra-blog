@@ -53,8 +53,11 @@ export function ScrollProgress() {
       aria-hidden="true"
     >
       <div
-        className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-150 ease-out"
-        style={{ width: `${progress}%` }}
+        className="h-full transition-all duration-150 ease-out"
+        style={{
+          width: `${progress}%`,
+          backgroundColor: 'var(--color-accent)',
+        }}
       />
     </div>
   )

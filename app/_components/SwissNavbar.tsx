@@ -1,73 +1,171 @@
+'use client'
+
 import { Search } from 'nextra/components'
-import { getPageMap } from 'nextra/page-map'
-import { Navbar as NextraNavbar, ThemeSwitch } from 'nextra-theme-blog'
+import { ThemeSwitch } from 'nextra-theme-blog'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import type { FC, ReactNode } from 'react'
 
-/**
- * SwissNavbar - Swiss-International Style 내비게이션
- *
- * 특징:
- * - 왼쪽: 로고 (Space Grotesk, 대문자)
- * - 오른쪽: 내비게이션 링크 (대문자, 모노스페이스)
- * - 얇은 디바이더
- * - 미니멀한 디자인
- *
- * NOTE: Server Component로 유지
- */
-export async function SwissNavbar() {
+type SwissNavbarProps = {
+  children?: ReactNode
+}
+
+export const SwissNavbar: FC<SwissNavbarProps> = ({ children }) => {
+  const pathname = usePathname()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/'
+    }
+    return pathname.startsWith(href)
+  }
+
   return (
-    <NextraNavbar pageMap={await getPageMap()}>
-      {/* Logo - 왼쪽 정렬 */}
-      <a
-        href="/"
-        className="flex items-center gap-3"
-        style={{
-          fontFamily: 'var(--font-hero), Space Grotesk, sans-serif',
-          fontSize: '1.5rem',
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: 'var(--tracking-hero)',
-        }}
-      >
-        <span style={{ color: 'var(--color-accent)' }}>●</span>
-        <span className="hover:text-[var(--color-accent)] transition-colors">
-          Developjik
-        </span>
-      </a>
+    <>
+      <div className="relative flex items-center justify-between px-6 py-4">
+        <a
+          href="/"
+          className="flex items-center gap-3"
+          style={{
+            fontFamily: 'var(--font-hero), Space Grotesk, sans-serif',
+            fontSize: '1.5rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: 'var(--tracking-hero)',
+          }}
+        >
+          <span style={{ color: 'var(--color-accent)' }}>●</span>
+          <span className="hover:text-[var(--color-accent)] transition-colors">
+            Developjik
+          </span>
+        </a>
 
-      {/* Navigation Links - 오른쪽 정렬 */}
-      <div className="flex items-center gap-6">
-        <nav className="hidden md:flex items-center gap-6">
-          <a
-            href="/"
-            className="text-meta link-swiss hover:text-[var(--color-accent)]"
-          >
-            Home
-          </a>
-          <a
-            href="/tags"
-            className="text-meta link-swiss hover:text-[var(--color-accent)]"
-          >
-            Tags
-          </a>
-          <a
-            href="https://github.com/developjik"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-meta link-swiss hover:text-[var(--color-accent)]"
-          >
-            GitHub
-          </a>
-        </nav>
+        <div className="flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-6">
+            <a
+              href="/"
+              className={`text-meta transition-colors ${
+                isActive('/')
+                  ? 'text-[var(--color-accent)]'
+                  : 'link-swiss hover:text-[var(--color-accent)]'
+              }`}
+            >
+              Home
+            </a>
+            <a
+              href="/tags"
+              className={`text-meta transition-colors ${
+                isActive('/tags')
+                  ? 'text-[var(--color-accent)]'
+                  : 'link-swiss hover:text-[var(--color-accent)]'
+              }`}
+            >
+              Tags
+            </a>
+            <a
+              href="https://github.com/developjik"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-meta link-swiss hover:text-[var(--color-accent)]"
+            >
+              GitHub
+            </a>
+          </nav>
 
-        {/* Search & Theme Switch */}
-        <div className="flex items-center gap-3">
-          <Search />
-          <ThemeSwitch />
+          <div className="flex items-center gap-3">
+            <Search />
+            <ThemeSwitch />
+            <button
+              type="button"
+              className="md:hidden flex flex-col justify-center gap-1.5 w-8 h-8"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              <span
+                className="w-6 h-0.5 transition-transform"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  transform: mobileMenuOpen
+                    ? 'rotate(45deg) translate(4px, 4px)'
+                    : 'none',
+                }}
+              />
+              <span
+                className="w-6 h-0.5 transition-opacity"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  opacity: mobileMenuOpen ? 0 : 1,
+                }}
+              />
+              <span
+                className="w-6 h-0.5 transition-transform"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  transform: mobileMenuOpen
+                    ? 'rotate(-45deg) translate(4px, -4px)'
+                    : 'none',
+                }}
+              />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Bottom Divider - 항상 표시 */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-[var(--color-border)]" />
-    </NextraNavbar>
+      <div className="h-px w-full bg-[var(--color-border)]" />
+
+      <div
+        className="fixed inset-0 bg-[var(--color-bg)] md:hidden flex flex-col items-center justify-center gap-8 transition-opacity duration-300 z-50"
+        style={{
+          opacity: mobileMenuOpen ? 1 : 0,
+          pointerEvents: mobileMenuOpen ? 'auto' : 'none',
+        }}
+      >
+        <a
+          href="/"
+          className={`text-2xl transition-colors ${
+            isActive('/') ? 'text-[var(--color-accent)]' : ''
+          }`}
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            fontFamily: 'var(--font-heading), Syne, sans-serif',
+            textTransform: 'uppercase',
+            letterSpacing: 'var(--tracking-heading)',
+          }}
+        >
+          Home
+        </a>
+        <a
+          href="/tags"
+          className={`text-2xl transition-colors ${
+            isActive('/tags') ? 'text-[var(--color-accent)]' : ''
+          }`}
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            fontFamily: 'var(--font-heading), Syne, sans-serif',
+            textTransform: 'uppercase',
+            letterSpacing: 'var(--tracking-heading)',
+          }}
+        >
+          Tags
+        </a>
+        <a
+          href="https://github.com/developjik"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-2xl transition-colors"
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            fontFamily: 'var(--font-heading), Syne, sans-serif',
+            textTransform: 'uppercase',
+            letterSpacing: 'var(--tracking-heading)',
+          }}
+        >
+          GitHub
+        </a>
+      </div>
+      {children}
+    </>
   )
 }
