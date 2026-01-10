@@ -218,18 +218,38 @@
   border-radius: 0;
   cursor: default;
   transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.tag-swiss::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--swiss-black);
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: all var(--transition-base);
+  z-index: -1;
+}
+
+.dark .tag-swiss::before {
+  background-color: var(--swiss-white);
 }
 
 .tag-swiss:hover {
-  background-color: var(--swiss-black);
   color: var(--swiss-white);
   border-color: var(--swiss-black);
 }
 
 .dark .tag-swiss:hover {
-  background-color: var(--swiss-white);
   color: var(--swiss-black);
   border-color: var(--swiss-white);
+}
+
+.tag-swiss:hover::before {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 /* Swiss Number */
@@ -269,28 +289,55 @@
   width: 100%;
 }
 
+.link-swiss:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
 /* Swiss Card */
 .card-swiss {
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   padding: var(--space-xl);
   transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-swiss::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(230, 57, 70, 0.03),
+    transparent
+  );
+  transition: left 0.6s ease;
+}
+
+.card-swiss:hover::before {
+  left: 100%;
 }
 
 .card-swiss:hover {
   border-color: var(--color-accent);
   transform: translateY(-8px);
-  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 32px 64px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(230, 57, 70, 0.1);
 }
 
 .dark .card-swiss:hover {
   border-color: var(--color-accent);
-  box-shadow: 0 32px 64px rgba(255, 255, 255, 0.12);
-}
-
-.dark .card-swiss:hover {
-  border-color: var(--color-accent);
-  box-shadow: 0 32px 64px rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 32px 64px rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(230, 57, 70, 0.1);
 }
 
 .card-swiss .tag-swiss {
@@ -453,6 +500,56 @@
   }
 }
 
+@keyframes swiss-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes swiss-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes swiss-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes swiss-border-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(230, 57, 70, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.1);
+  }
+}
+
+@keyframes swiss-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
 .animate-swiss-reveal {
   animation: swiss-reveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -500,17 +597,20 @@
    CUSTOM SCROLLBAR
    ===================================================== */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
+  border-left: 1px solid var(--color-border);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: var(--swiss-gray);
   border-radius: 0;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -543,6 +643,26 @@
   letter-spacing: var(--tracking-heading);
   margin-top: var(--space-3xl);
   margin-bottom: var(--space-lg);
+  position: relative;
+}
+
+.prose h1::after,
+.prose h2::after,
+.prose h3::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-accent);
+  transition: width var(--transition-base);
+}
+
+.prose h1:hover::after,
+.prose h2:hover::after,
+.prose h3:hover::after {
+  width: 60px;
 }
 
 .prose p {
@@ -575,12 +695,26 @@
   width: 100%;
 }
 
+.prose a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
 .prose code {
   font-family: var(--font-mono);
   font-size: 0.9em;
   background-color: var(--swiss-light-gray);
   padding: 2px 6px;
+  border: 1px solid var(--swiss-border);
   border-radius: 0;
+  transition: all var(--transition-fast);
+}
+
+.prose code:hover {
+  background-color: var(--swiss-red);
+  color: var(--swiss-white);
+  border-color: var(--swiss-red);
 }
 
 .dark .prose code {
@@ -588,11 +722,30 @@
   color: #e0e0e0;
 }
 
+.dark .prose code:hover {
+  background-color: var(--swiss-red);
+  color: var(--swiss-white);
+  border-color: var(--swiss-red);
+}
+
 .prose pre {
   background-color: var(--swiss-light-gray);
   border: 1px solid var(--color-border);
   border-radius: 0;
   padding: var(--space-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.prose pre::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background-color: var(--color-accent);
+  opacity: 0.3;
 }
 
 .dark .prose pre {
@@ -600,11 +753,35 @@
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+.prose pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+.prose pre code:hover {
+  background-color: transparent;
+  color: inherit;
+  border-color: transparent;
+}
+
 .prose blockquote {
-  border-left: 2px solid var(--color-accent);
+  border-left: 3px solid var(--color-accent);
   padding-left: var(--space-lg);
   font-style: normal;
   color: var(--color-text-secondary);
+  position: relative;
+}
+
+.prose blockquote::before {
+  content: '"';
+  position: absolute;
+  top: 0;
+  left: -12px;
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  color: var(--color-accent);
+  opacity: 0.3;
 }
 
 .prose ul,
@@ -614,6 +791,12 @@
 
 .prose li {
   margin-bottom: var(--space-sm);
+  position: relative;
+}
+
+.prose li::marker {
+  color: var(--color-accent);
+  font-weight: 600;
 }
 
 /* =====================================================

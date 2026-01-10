@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { ScrollReveal, PostCardSkeleton } from './index'
+import { useEffect, useState } from 'react'
+import { PostCardSkeleton, ScrollReveal } from './index'
 
 export function Homepage() {
   const [loading, setLoading] = useState(true)
@@ -158,7 +158,7 @@ export function Homepage() {
 
           <div className="col-span-12 text-center mt-8">
             <ScrollReveal variant="up" delay={400}>
-              <a href="/tags" className="btn-swiss btn-swiss-outline">
+              <a href="/archives" className="btn-swiss btn-swiss-outline">
                 VIEW ALL POSTS
               </a>
             </ScrollReveal>

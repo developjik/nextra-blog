@@ -10,7 +10,7 @@ export { ScrollProgress } from './ScrollProgress'
 export { ScrollReveal, ScrollRevealGroup } from './ScrollReveal'
 export { ShareButtons } from './ShareButtons'
 export { SkipLink } from './SkipLink'
-export { TableOfContents } from './TableOfContents'
+export { SwissButton } from './SwissButton'
 
 // Swiss-International Components
 export { SwissCard } from './SwissCard'
@@ -23,3 +23,4 @@ export {
   SwissMeta,
   SwissTypography,
 } from './SwissTypography'
+export { TableOfContents } from './TableOfContents'

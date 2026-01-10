@@ -1,10 +1,10 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { Search } from 'nextra/components'
 import { ThemeSwitch } from 'nextra-theme-blog'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
 import type { FC, ReactNode } from 'react'
+import { useState } from 'react'
 
 type SwissNavbarProps = {
   children?: ReactNode
@@ -116,7 +116,7 @@ export const SwissNavbar: FC<SwissNavbarProps> = ({ children }) => {
       <div className="h-px w-full bg-[var(--color-border)]" />
 
       <div
-        className="fixed inset-0 bg-[var(--color-bg)] md:hidden flex flex-col items-center justify-center gap-8 transition-opacity duration-300 z-50"
+        className="fixed inset-0 bg-[var(--color-bg)] md:hidden flex flex-col items-center justify-center gap-8 transition-opacity duration-300 z-50 backdrop-blur-sm"
         style={{
           opacity: mobileMenuOpen ? 1 : 0,
           pointerEvents: mobileMenuOpen ? 'auto' : 'none',
@@ -124,7 +124,7 @@ export const SwissNavbar: FC<SwissNavbarProps> = ({ children }) => {
       >
         <a
           href="/"
-          className={`text-2xl transition-colors ${
+          className={`text-3xl transition-all duration-200 ${
             isActive('/') ? 'text-[var(--color-accent)]' : ''
           }`}
           onClick={() => setMobileMenuOpen(false)}
@@ -138,7 +138,7 @@ export const SwissNavbar: FC<SwissNavbarProps> = ({ children }) => {
         </a>
         <a
           href="/tags"
-          className={`text-2xl transition-colors ${
+          className={`text-3xl transition-all duration-200 ${
             isActive('/tags') ? 'text-[var(--color-accent)]' : ''
           }`}
           onClick={() => setMobileMenuOpen(false)}
@@ -154,7 +154,7 @@ export const SwissNavbar: FC<SwissNavbarProps> = ({ children }) => {
           href="https://github.com/developjik"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-2xl transition-colors"
+          className="text-3xl transition-all duration-200"
           onClick={() => setMobileMenuOpen(false)}
           style={{
             fontFamily: 'var(--font-heading), Syne, sans-serif',

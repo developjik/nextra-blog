@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
-import { Breadcrumbs } from '~/app/_components'
-import { RelatedPosts } from '~/app/_components'
-import { Comments } from '~/app/_components'
+import { Breadcrumbs, Comments, RelatedPosts } from '~/app/_components'
 
 interface Post {
   title: string
