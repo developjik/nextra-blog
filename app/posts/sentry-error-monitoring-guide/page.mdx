@@ -1,0 +1,805 @@
+import { JsonLd } from '~/app/_components'
+
+<JsonLd
+  metadata={{
+    title: 'Sentry: 실시간 에러 모니터링 및 성능 추적 플랫폼',
+    description: 'Sentry의 개념과 활용 방법을 체계적으로 정리한 가이드입니다. 에러 모니터링, 성능 추적, 브레드크럼, 릴리스 추적 등 프로덕션 환경에서 필수적인 모니터링 기능을 React 및 Next.js 예제와 함께 설명합니다.',
+    date: '2026-01-20',
+    slug: 'sentry-error-monitoring-guide',
+    tags: ['Sentry', 'React', '에러 모니터링', '성능 최적화', '운영', 'DevOps', '모니터링', '가이드'],
+  }}
+/>
+
+# Sentry: 실시간 에러 모니터링 및 성능 추적 플랫폼
+
+## 📋 문서 분석
+
+- **문서 유형**: Explanation (개념 설명) + Tutorial (실습 가이드)
+- **대상 독자**: 초급~중급 프론트엔드 개발자
+- **주요 목표**: Sentry의 개념을 이해하고 프로젝트에 적용할 수 있음
+- **예상 길이**: 중간~긺
+
+---
+
+## 개요
+
+Sentry는 실시간으로 애플리케이션의 에러를 추적하고 성능을 모니터링하는 오픈소스 플랫폼입니다. 프로덕션 환경에서 발생하는 예외, 크래시, 성능 병목 현상을 자동으로 수집하고 분석하여 문제를 빠르게 파악하고 해결할 수 있게 도와줍니다.
+
+이 문서에서는 Sentry가 무엇인지, 왜 필요한지, 그리고 실제 프로젝트에 어떻게 적용하는지 알아봅니다.
+
+---
+
+## 배경
+
+### 왜 필요한가?
+
+전통적인 개발 방식에서는 다음과 같은 문제가 있었습니다:
+
+**사용자가 겪는 문제를 개발자가 모른다**
+
+- 사용자 브라우저에서 발생한 에러는 개발자에게 전달되지 않습니다
+- 콘솔 로그는 사용자의 로컬 환경에만 남고 사라집니다
+- 버그 리포트는 재현이 어렵고 정보가 불완전합니다
+
+**에러 디버깅이 어렵다**
+
+- 어떤 환경에서 에러가 발생했는지 알 수 없습니다
+- 에러 발생 직전의 사용자 행동을 파악할 수 없습니다
+- 스택 트레이스만으로는 원인을 찾기 힘듭니다
+
+**성능 문제를 감지하기 어렵다**
+
+- 특정 API 호출이 느린지 알 수 없습니다
+- 어떤 페이지에서 렌더링이 지연되는지 모릅니다
+- 데이터베이스 쿼리의 성능을 측정할 방법이 없습니다
+
+### 등장 이전의 방식
+
+Sentry가 등장하기 전에는 다음과 같은 방법을 사용했습니다:
+
+```javascript
+// ❌ 기존 방식: 수동 에러 처리
+window.onerror = function(message, source, lineno, colno, error) {
+  // 에러 정보를 서버로 전송
+  fetch('/api/log-error', {
+    method: 'POST',
+    body: JSON.stringify({
+      message,
+      source,
+      lineno,
+      colno,
+      stack: error?.stack
+    })
+  });
+};
+```
+
+이 방식의 문제점:
+
+- 모든 에러 처리 로직을 직접 구현해야 합니다
+- 에러 그룹핑, 중복 제거, 알림 등의 기능이 없습니다
+- 성능 데이터는 별도로 수집해야 합니다
+- 에러 분석 도구가 없어 원시 데이터만 확인할 수 있습니다
+
+---
+
+## 동작 원리
+
+### 핵심 메커니즘
+
+Sentry는 다음과 같은 과정으로 에러를 수집하고 처리합니다:
+
+1. **SDK 초기화**: 애플리케이션에 Sentry SDK를 설치하고 설정합니다
+2. **자동 계측**: SDK가 전역 에러 핸들러를 등록하고 에러를 자동으로 캡처합니다
+3. **데이터 수집**: 에러 발생 시 스택 트레이스, 사용자 정보, 브라우저 환경 등을 수집합니다
+4. **전송**: 수집된 데이터를 Sentry 서버로 전송합니다
+5. **분석 및 그룹핑**: 유사한 에러를 자동으로 그룹화하고 패턴을 분석합니다
+6. **알림**: 새로운 에러나 중요한 문제가 발생하면 팀에 알립니다
+
+### 시각적 흐름
+
+```
+[사용자 브라우저]
+      ↓
+   에러 발생
+      ↓
+[Sentry SDK 캡처]
+      ↓
+   컨텍스트 수집
+   - 스택 트레이스
+   - 사용자 정보
+   - 브레드크럼 (행동 추적)
+   - 환경 정보
+      ↓
+[Sentry 서버]
+      ↓
+   에러 그룹핑
+      ↓
+   대시보드 표시
+      ↓
+[개발자 알림]
+   - 이메일
+   - Slack
+   - Jira 이슈 생성
+```
+
+### 코드로 이해하기
+
+```javascript
+// Sentry가 자동으로 처리하는 예제
+import * as Sentry from "@sentry/react";
+
+// 1. 초기화
+Sentry.init({
+  dsn: "https://your-dsn@sentry.io/project-id",
+  environment: "production",
+  tracesSampleRate: 1.0, // 성능 모니터링
+});
+
+// 2. 자동 에러 캡처 - 별도 코드 없이 작동
+function UserProfile({ userId }) {
+  // 이 에러는 자동으로 Sentry에 전송됩니다
+  const user = fetchUser(userId); // null 체크 없이 접근
+  return <div>{user.name}</div>; // TypeError 발생 시 자동 캡처
+}
+
+// 3. 수동 에러 캡처 (필요 시)
+try {
+  processPayment(amount);
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: {
+      payment_method: "credit_card",
+      amount: amount
+    }
+  });
+  throw error;
+}
+```
+
+---
+
+## 주요 기능
+
+### 기능 1: 에러 모니터링 (Error Monitoring)
+
+애플리케이션에서 발생하는 모든 예외를 자동으로 추적합니다.
+
+**자동 수집 정보:**
+
+- **스택 트레이스**: 에러가 발생한 정확한 위치
+- **소스맵 지원**: 빌드된 코드를 원본 코드로 변환
+- **에러 그룹핑**: 동일한 근본 원인을 가진 에러를 하나로 묶음
+- **영향도 측정**: 얼마나 많은 사용자가 영향을 받았는지
+
+```javascript
+// 예시: React 컴포넌트 에러
+function ProductList() {
+  const products = useProducts();
+
+  // products가 undefined일 때 에러 발생
+  return products.map(product => (
+    <ProductCard key={product.id} {...product} />
+  ));
+}
+
+// Sentry가 자동으로 캡처하는 정보:
+// - TypeError: Cannot read property 'map' of undefined
+// - 발생 위치: ProductList.jsx:4
+// - 영향받은 사용자 수: 127명
+// - 첫 발생 시간: 2024-01-15 14:23
+```
+
+### 기능 2: 브레드크럼 (Breadcrumbs)
+
+에러 발생 직전의 사용자 행동을 타임라인으로 기록합니다.
+
+```javascript
+// 자동으로 기록되는 브레드크럼:
+// 1. [14:20:15] User clicked "Add to Cart" button
+// 2. [14:20:16] API call: POST /api/cart/add
+// 3. [14:20:17] Navigation: /cart → /checkout
+// 4. [14:20:18] User clicked "Complete Purchase"
+// 5. [14:20:19] ❌ Error: Payment processing failed
+
+// 수동으로 브레드크럼 추가
+Sentry.addBreadcrumb({
+  category: 'payment',
+  message: 'User selected payment method: Credit Card',
+  level: 'info'
+});
+```
+
+이 기능으로 에러 재현이 쉬워집니다.
+
+### 기능 3: 성능 모니터링 (Performance Monitoring)
+
+애플리케이션의 성능을 측정하고 병목 지점을 찾습니다.
+
+```javascript
+// 자동 성능 추적
+Sentry.init({
+  dsn: "...",
+  tracesSampleRate: 1.0, // 100% 트랜잭션 추적
+  integrations: [
+    new Sentry.BrowserTracing({
+      // 페이지 로드 시간
+      // API 호출 시간
+      // 컴포넌트 렌더링 시간
+    }),
+  ],
+});
+
+// 수동 성능 측정
+const transaction = Sentry.startTransaction({
+  name: "processCheckout",
+  op: "checkout"
+});
+
+const span = transaction.startChild({
+  op: "payment",
+  description: "Process payment"
+});
+
+await processPayment();
+span.finish();
+transaction.finish();
+
+// Sentry 대시보드에서 확인 가능:
+// - processCheckout 평균 시간: 2.3초
+// - payment 단계 시간: 1.8초 (병목!)
+// - 가장 느린 트랜잭션 상위 10개
+```
+
+### 기능 4: 릴리스 추적 (Release Tracking)
+
+배포 버전별로 에러를 추적하여 회귀 버그를 빠르게 감지합니다.
+
+```javascript
+// 빌드 시 릴리스 정보 설정
+Sentry.init({
+  dsn: "...",
+  release: "my-app@1.2.0",
+  environment: "production"
+});
+
+// 대시보드에서 확인:
+// - v1.2.0 배포 후 새로운 에러 3건 발견
+// - v1.1.0에서는 발생하지 않았던 에러
+// - 영향받은 사용자: 45명
+// → 즉시 롤백 또는 핫픽스 배포 결정
+```
+
+---
+
+## 실제 사용 사례
+
+### 사례 1: React 애플리케이션에 Sentry 통합
+
+프론트엔드 React 프로젝트에 Sentry를 적용하는 전형적인 사례입니다.
+
+```javascript
+// 1. 설치
+// npm install @sentry/react
+
+// 2. 초기화 (src/index.js 또는 main.tsx)
+import React from "react";
+import ReactDOM from "react-dom/client";
+import * as Sentry from "@sentry/react";
+import App from "./App";
+
+Sentry.init({
+  dsn: process.env.REACT_APP_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+
+  // 성능 모니터링 설정
+  integrations: [
+    new Sentry.BrowserTracing({
+      // React Router 통합
+      routingInstrumentation: Sentry.reactRouterV6Instrumentation(
+        React.useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes
+      ),
+    }),
+    new Sentry.Replay(), // 세션 리플레이
+  ],
+
+  tracesSampleRate: 0.1, // 10%의 트랜잭션 추적
+  replaysSessionSampleRate: 0.1, // 10%의 세션 녹화
+  replaysOnErrorSampleRate: 1.0, // 에러 발생 시 100% 녹화
+
+  // 개발 환경에서는 비활성화
+  enabled: process.env.NODE_ENV === 'production',
+
+  // 민감한 정보 필터링
+  beforeSend(event) {
+    // 개인정보가 포함된 에러는 전송하지 않음
+    if (event.user?.email) {
+      delete event.user.email;
+    }
+    return event;
+  }
+});
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+### 사례 2: Next.js 애플리케이션 (App Router)
+
+Next.js 14 App Router에서 Sentry를 설정하는 방법입니다.
+
+```javascript
+// 설치
+// npm install @sentry/nextjs
+
+// sentry.client.config.js
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 1.0,
+  debug: false,
+  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: 0.1,
+
+  integrations: [
+    new Sentry.Replay({
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+  ],
+});
+
+// sentry.server.config.js
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 1.0,
+  debug: false,
+});
+
+// app/error.tsx - 에러 바운더리
+'use client';
+
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <div>
+      <h2>문제가 발생했습니다</h2>
+      <button onClick={() => reset()}>다시 시도</button>
+    </div>
+  );
+}
+```
+
+### 사례 3: API 호출 에러 추적
+
+네트워크 요청 실패를 상세하게 추적하는 방법입니다.
+
+```javascript
+// API 클라이언트에 Sentry 통합
+import * as Sentry from "@sentry/react";
+
+async function apiRequest(endpoint, options) {
+  const transaction = Sentry.startTransaction({
+    name: `API ${options.method} ${endpoint}`,
+    op: "http.client"
+  });
+
+  try {
+    const response = await fetch(`/api${endpoint}`, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'sentry-trace': transaction.toTraceparent(),
+      }
+    });
+
+    if (!response.ok) {
+      // HTTP 에러를 Sentry에 기록
+      Sentry.captureException(
+        new Error(`API Error: ${response.status}`),
+        {
+          tags: {
+            endpoint,
+            status_code: response.status,
+            method: options.method
+          },
+          contexts: {
+            response: {
+              status: response.status,
+              statusText: response.statusText,
+              url: response.url
+            }
+          }
+        }
+      );
+    }
+
+    transaction.setStatus('ok');
+    return await response.json();
+
+  } catch (error) {
+    transaction.setStatus('internal_error');
+
+    // 네트워크 에러를 Sentry에 기록
+    Sentry.captureException(error, {
+      tags: {
+        endpoint,
+        error_type: 'network_error'
+      }
+    });
+
+    throw error;
+  } finally {
+    transaction.finish();
+  }
+}
+
+// 사용 예시
+try {
+  const data = await apiRequest('/users/123', { method: 'GET' });
+  console.log(data);
+} catch (error) {
+  console.error('Failed to fetch user:', error);
+}
+
+// Sentry에서 확인 가능:
+// - API GET /users/123: 평균 응답 시간 245ms
+// - 실패율: 2.3% (주로 404 에러)
+// - 가장 느린 요청: 1.2초 (타임아웃 경계)
+```
+
+---
+
+## 장점과 한계
+
+### 장점
+
+- ✅ **자동 에러 수집**: 코드 수정 없이 대부분의 에러를 자동으로 캡처합니다
+- ✅ **풍부한 컨텍스트**: 에러 발생 시 사용자 행동, 환경 정보를 함께 수집합니다
+- ✅ **스마트 그룹핑**: 유사한 에러를 자동으로 묶어서 노이즈를 줄입니다
+- ✅ **릴리스 추적**: 버전별 에러를 추적하여 회귀 버그를 빠르게 발견합니다
+- ✅ **성능 모니터링**: 에러뿐만 아니라 성능 병목도 찾을 수 있습니다
+- ✅ **다양한 통합**: Slack, Jira, GitHub 등과 쉽게 연동됩니다
+- ✅ **세션 리플레이**: 에러 발생 순간의 사용자 화면을 녹화하여 재현이 쉽습니다
+
+### 한계
+
+- ⚠️ **비용**: 무료 플랜은 이벤트 수 제한이 있고, 대규모 서비스는 비용이 높습니다
+- ⚠️ **개인정보 처리**: 사용자 데이터 수집 시 GDPR 등 규정을 준수해야 합니다
+- ⚠️ **성능 오버헤드**: SDK가 애플리케이션 성능에 미미하지만 영향을 줄 수 있습니다
+- ⚠️ **소스맵 관리**: 프로덕션 빌드에서 정확한 에러 위치를 표시하려면 소스맵 업로드가 필요합니다
+- ⚠️ **노이즈**: 샘플링 설정을 잘못하면 너무 많은 이벤트가 수집될 수 있습니다
+
+### 트레이드오프
+
+**Sentry를 사용해야 하는 경우:**
+
+- 프로덕션 환경에서 사용자가 겪는 문제를 파악하고 싶을 때
+- 팀이 여러 명이고 체계적인 에러 관리가 필요할 때
+- 성능 모니터링이 필요한 복잡한 애플리케이션일 때
+- 릴리스 품질을 데이터 기반으로 측정하고 싶을 때
+
+**Sentry가 불필요한 경우:**
+
+- 작은 개인 프로젝트나 프로토타입
+- 로컬 개발 환경만 사용하는 경우
+- 이벤트 수가 많아서 비용이 부담되는 경우 (자체 호스팅 고려)
+
+---
+
+## 시작하기
+
+### 1단계: Sentry 계정 생성
+
+1. [sentry.io](https://sentry.io)에 접속합니다
+2. 무료 계정을 생성합니다 (월 5,000 이벤트까지 무료)
+3. 새 프로젝트를 생성하고 플랫폼을 선택합니다 (React, Next.js 등)
+4. DSN(Data Source Name)을 복사합니다
+
+### 2단계: SDK 설치
+
+```bash
+# React
+npm install @sentry/react
+
+# Next.js
+npm install @sentry/nextjs
+
+# Vanilla JavaScript
+npm install @sentry/browser
+```
+
+### 3단계: 기본 설정
+
+```javascript
+// React 예시
+import * as Sentry from "@sentry/react";
+
+Sentry.init({
+  dsn: "YOUR_DSN_HERE",
+  environment: "production",
+  tracesSampleRate: 1.0,
+});
+```
+
+### 4단계: 테스트
+
+```javascript
+// 테스트 에러 발생
+function TestButton() {
+  return (
+    <button onClick={() => {
+      throw new Error("Sentry 테스트 에러!");
+    }}>
+      에러 발생
+    </button>
+  );
+}
+```
+
+버튼을 클릭하면 Sentry 대시보드에 에러가 표시됩니다.
+
+### 5단계: 프로덕션 최적화
+
+```javascript
+Sentry.init({
+  dsn: process.env.REACT_APP_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+
+  // 개발 환경에서는 비활성화
+  enabled: process.env.NODE_ENV === 'production',
+
+  // 샘플링 비율 조정 (비용 절감)
+  tracesSampleRate: 0.1, // 10%만 추적
+
+  // 민감한 데이터 필터링
+  beforeSend(event, hint) {
+    // PII 제거
+    if (event.request?.cookies) {
+      delete event.request.cookies;
+    }
+    return event;
+  },
+
+  // 특정 에러 무시
+  ignoreErrors: [
+    'ResizeObserver loop limit exceeded',
+    'Non-Error promise rejection captured',
+  ],
+});
+```
+
+---
+
+## 관련 개념
+
+### 유사 도구
+
+- **LogRocket**: 세션 리플레이에 더 특화되어 있으며, Sentry와 유사한 에러 추적 기능을 제공합니다
+- **Rollbar**: Sentry와 유사한 에러 모니터링 도구로, 더 간단한 인터페이스를 제공합니다
+- **Bugsnag**: 모바일 앱 에러 추적에 강점이 있는 도구입니다
+
+### 대안
+
+**자체 구축**: 작은 규모라면 AWS CloudWatch, Google Analytics 등으로 직접 구축할 수 있습니다
+
+- **장점**: 비용 절감, 완전한 제어
+- **단점**: 개발/유지보수 시간 필요, 기능 제한적
+
+**오픈소스 자체 호스팅**: Sentry는 오픈소스이므로 직접 서버에 설치할 수 있습니다
+
+- **장점**: 데이터 완전 통제, 이벤트 수 제한 없음
+- **단점**: 서버 관리 필요, 업데이트 직접 처리
+
+---
+
+## 베스트 프랙티스
+
+### 1. 환경별 설정 분리
+
+```javascript
+// .env.development
+REACT_APP_SENTRY_DSN=your-dsn-here
+REACT_APP_SENTRY_ENVIRONMENT=development
+REACT_APP_SENTRY_ENABLED=false
+
+// .env.production
+REACT_APP_SENTRY_DSN=your-dsn-here
+REACT_APP_SENTRY_ENVIRONMENT=production
+REACT_APP_SENTRY_ENABLED=true
+```
+
+### 2. 사용자 컨텍스트 추가
+
+```javascript
+// 로그인 후 사용자 정보 설정
+Sentry.setUser({
+  id: user.id,
+  username: user.username,
+  // 이메일은 개인정보이므로 주의
+  // email: user.email,
+});
+
+// 로그아웃 시 사용자 정보 제거
+Sentry.setUser(null);
+```
+
+### 3. 커스텀 태그 활용
+
+```javascript
+// 에러를 카테고리별로 분류
+Sentry.setTag("payment_provider", "stripe");
+Sentry.setTag("feature", "checkout");
+
+// 에러 발생
+try {
+  await processPayment();
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: {
+      payment_amount: amount,
+      currency: "USD"
+    }
+  });
+}
+
+// Sentry에서 태그별로 필터링 가능:
+// - payment_provider: stripe인 에러만 보기
+// - feature: checkout인 에러만 보기
+```
+
+### 4. 알림 규칙 설정
+
+Sentry 대시보드에서 알림 규칙을 설정하세요:
+
+- **새로운 에러 발생**: Slack으로 즉시 알림
+- **에러 빈도 증가**: 1분에 10건 이상 → 긴급 알림
+- **릴리스 에러**: 새 버전에서 에러 발생 → 팀 전체 알림
+- **특정 태그**: payment 관련 에러 → 결제팀에만 알림
+
+---
+
+## 문제 해결
+
+### 증상 1: Sentry에 에러가 전송되지 않음
+
+**원인:**
+
+- DSN이 잘못 설정됨
+- `enabled: false`로 설정됨
+- 네트워크 차단 (방화벽, 광고 차단기)
+
+**해결 방법:**
+
+```javascript
+// 1. DSN 확인
+console.log(Sentry.getCurrentHub().getClient()?.getDsn());
+
+// 2. 테스트 에러 발생
+Sentry.captureException(new Error("Test error"));
+
+// 3. 브라우저 네트워크 탭에서 확인
+// sentry.io로 요청이 전송되는지 확인
+
+// 4. 개발 환경에서도 활성화 (테스트용)
+Sentry.init({
+  dsn: "...",
+  enabled: true, // 개발 중에도 활성화
+  debug: true,   // 디버그 로그 출력
+});
+```
+
+### 증상 2: 스택 트레이스가 난독화되어 읽을 수 없음
+
+**원인:**
+
+소스맵이 업로드되지 않아서 빌드된 코드의 위치만 표시됩니다.
+
+**해결 방법:**
+
+```bash
+# Next.js는 자동으로 처리
+# sentry.properties 파일 생성
+org=your-org
+project=your-project
+
+# 빌드 시 소스맵 업로드
+npx @sentry/cli releases files <release> upload-sourcemaps ./build
+```
+
+### 증상 3: 너무 많은 이벤트로 할당량 초과
+
+**해결 방법:**
+
+```javascript
+// 1. 샘플링 비율 조정
+Sentry.init({
+  tracesSampleRate: 0.1, // 10%만 추적
+  replaysSessionSampleRate: 0.1,
+});
+
+// 2. 불필요한 에러 무시
+ignoreErrors: [
+  // 브라우저 확장 프로그램 에러
+  'top.GLOBALS',
+  // 타사 스크립트 에러
+  /^Script error\.?$/,
+  // 개발 전용 에러
+  'ResizeObserver loop limit exceeded',
+],
+
+// 3. URL 기반 필터링
+beforeSend(event) {
+  // 관리자 페이지 에러만 전송
+  if (!event.request?.url?.includes('/admin/')) {
+    return null;
+  }
+  return event;
+}
+```
+
+---
+
+## 더 알아보기
+
+**공식 문서:**
+
+- [Sentry 공식 문서](https://docs.sentry.io/)
+- [React SDK 가이드](https://docs.sentry.io/platforms/javascript/guides/react/)
+- [Next.js SDK 가이드](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
+
+**심화 주제:**
+
+- [소스맵 업로드 자동화](https://docs.sentry.io/platforms/javascript/sourcemaps/)
+- [성능 모니터링 고급 설정](https://docs.sentry.io/product/performance/)
+- [세션 리플레이 활용](https://docs.sentry.io/product/session-replay/)
+
+**통합 가이드:**
+
+- [Slack 알림 설정](https://docs.sentry.io/product/integrations/notification-incidents/slack/)
+- [Jira 이슈 자동 생성](https://docs.sentry.io/product/integrations/issue-tracking/jira/)
+- [GitHub 연동](https://docs.sentry.io/product/integrations/source-code-mgmt/github/)
+
+---
+
+## 요약
+
+Sentry는 프로덕션 환경의 에러와 성능 문제를 실시간으로 추적하는 필수 도구입니다.
+
+**핵심 가치:**
+
+- 🔍 사용자가 겪는 문제를 **실시간으로 파악**
+- 🎯 에러의 **근본 원인을 빠르게 분석**
+- 📊 릴리스별 **품질을 데이터로 측정**
+- 🚀 성능 병목을 **자동으로 감지**
+
+**시작 방법:**
+
+1. 5분 안에 설치 및 설정 가능
+2. 자동 에러 캡처로 즉시 효과 확인
+3. 점진적으로 성능 모니터링, 알림 등 고급 기능 추가
+
+프로덕션에 배포하는 모든 프로젝트에 Sentry를 적용하여, 사용자 경험을 개선하고 빠르게 문제를 해결하세요.
