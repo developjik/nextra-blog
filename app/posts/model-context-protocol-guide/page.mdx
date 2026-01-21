@@ -1,0 +1,1132 @@
+---
+title: 'Model Context Protocol (MCP) 완벽 가이드'
+date: '2026-01-22'
+description: 'AI와 외부 세계를 연결하는 표준 프로토콜인 MCP의 핵심 개념과 실전 구현 방법을 알아봅니다. Python과 TypeScript로 MCP 서버를 직접 구현해보세요.'
+tags: ['MCP', 'Model Context Protocol', 'Anthropic', 'AI', 'Python', 'TypeScript', '완벽 가이드']
+---
+
+import { JsonLd } from '~/app/_components'
+
+<JsonLd
+  metadata={{
+    title: 'Model Context Protocol (MCP) 완벽 가이드',
+    description: 'AI와 외부 세계를 연결하는 표준 프로토콜인 MCP의 핵심 개념과 실전 구현 방법을 알아봅니다. Python과 TypeScript로 MCP 서버를 직접 구현해보세요.',
+    date: '2026-01-22',
+    slug: 'model-context-protocol-guide',
+    tags: ['MCP', 'Model Context Protocol', 'Anthropic', 'AI', 'Python', 'TypeScript', '완벽 가이드'],
+  }}
+/>
+
+# Model Context Protocol (MCP) 완벽 가이드
+
+**AI와 외부 세계를 연결하는 표준 프로토콜**
+
+## 📋 문서 정보
+
+- **대상 독자**: AI 통합을 고려하는 중급 이상 개발자
+- **예상 소요 시간**: 15분 읽기, 30분 실습
+- **버전**: 1.0.0 (2025-01-18 기준)
+
+---
+
+## 개요
+
+**MCP(Model Context Protocol)**는 Large Language Models(LLM)이 외부 데이터 소스와 도구에 접근하는 방식을 표준화하는 개방형 프로토콜입니다. Anthropic에서 개발했으며, AI 애플리케이션 개발의 복잡성을 크게 줄여줍니다.
+
+이 가이드를 통해 다음을 배울 수 있습니다:
+- MCP의 핵심 개념과 동작 원리
+- 기존 API 통합 방식과의 차이점
+- 실제 프로젝트에 MCP를 적용하는 방법
+- Python과 TypeScript로 MCP 서버를 구현하는 방법
+
+### 왜 MCP가 필요한가?
+
+기존에는 LLM이 외부 데이터에 접근하려면 각 데이터 소스마다 맞춤형 커넥터를 개발해야 했습니다. 예를 들어:
+
+```javascript
+// ❌ 기존 방식: 각 서비스마다 별도 통합 필요
+await connectToGoogleDrive();
+await connectToNotion();
+await connectToSlack();
+await connectToDatabase();
+// ... 수십 개의 개별 통합 코드
+```
+
+MCP는 이를 하나의 표준 인터페이스로 통합합니다:
+
+```javascript
+// ✅ MCP 방식: 표준화된 프로토콜
+const mcpClient = new MCPClient();
+mcpClient.connect('google-drive-server');
+mcpClient.connect('notion-server');
+mcpClient.connect('slack-server');
+// 모두 동일한 프로토콜 사용
+```
+
+---
+
+## 핵심 개념
+
+### MCP는 "AI의 USB-C 포트"
+
+USB-C가 다양한 기기를 하나의 표준 포트로 연결하듯이, MCP는 다양한 데이터 소스와 도구를 하나의 표준 프로토콜로 연결합니다.
+
+| 기존 방식 | MCP 방식 |
+|---------|---------|
+| 각 기기마다 다른 케이블 필요 | 하나의 USB-C로 모든 기기 연결 |
+| 각 데이터 소스마다 맞춤형 통합 | 하나의 MCP로 모든 소스 연결 |
+
+### 아키텍처 구조
+
+MCP는 클라이언트-서버 아키텍처를 따릅니다:
+
+```
+┌─────────────────────────────────────┐
+│         MCP Host                    │
+│  (Claude Desktop, IDE, AI Tools)    │
+│                                     │
+│  ┌───────────┐    ┌──────────┐    │
+│  │    LLM    │────│  MCP     │    │
+│  │           │    │  Client  │    │
+│  └───────────┘    └─────┬────┘    │
+└─────────────────────────┼──────────┘
+                          │ MCP Protocol
+                          │ (JSON-RPC 2.0)
+                          │
+        ┌─────────────────┴─────────────────┐
+        │                                   │
+┌───────▼──────┐                   ┌────────▼──────┐
+│  MCP Server  │                   │  MCP Server   │
+│  (Notion)    │                   │  (Slack)      │
+└───────┬──────┘                   └────────┬──────┘
+        │                                   │
+┌───────▼──────┐                   ┌────────▼──────┐
+│   Notion     │                   │    Slack      │
+│   Database   │                   │   Workspace   │
+└──────────────┘                   └───────────────┘
+```
+
+### 주요 구성 요소
+
+#### 1. MCP Host
+LLM을 실행하고 사용자와 상호작용하는 애플리케이션입니다.
+
+**예시**:
+- Claude Desktop
+- VS Code with AI extensions
+- 커스텀 AI 애플리케이션
+
+#### 2. MCP Client
+Host 내부에서 실행되며, MCP 서버와 1:1 연결을 관리합니다.
+
+```typescript
+// MCP Client 초기화 예시
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+const client = new Client({
+  name: 'my-app-client',
+  version: '1.0.0'
+});
+
+const transport = new StdioClientTransport({
+  command: 'mcp-server-slack',
+  args: ['--workspace', 'my-workspace']
+});
+
+await client.connect(transport);
+```
+
+#### 3. MCP Server
+특정 데이터 소스나 도구를 MCP 프로토콜로 노출하는 프로그램입니다.
+
+**MCP Server가 제공하는 3가지 핵심 기능**:
+
+##### a) Resources (리소스)
+읽기 전용 데이터 소스입니다.
+
+```typescript
+// 예: Notion 페이지 읽기
+const resource = await client.readResource({
+  uri: 'notion://page/abc-123'
+});
+
+console.log(resource.contents);
+// Notion 페이지의 마크다운 콘텐츠 출력
+```
+
+##### b) Tools (도구)
+LLM이 실행할 수 있는 함수입니다.
+
+```typescript
+// 예: Slack 메시지 전송
+await client.callTool({
+  name: 'send_slack_message',
+  arguments: {
+    channel: '#general',
+    message: 'Hello from MCP!'
+  }
+});
+```
+
+##### c) Prompts (프롬프트)
+재사용 가능한 프롬프트 템플릿입니다.
+
+```typescript
+// 예: 코드 리뷰 프롬프트
+const prompt = await client.getPrompt({
+  name: 'code-review',
+  arguments: {
+    language: 'typescript',
+    file: 'src/index.ts'
+  }
+});
+```
+
+---
+
+## MCP vs 기존 API: 무엇이 다른가?
+
+### 전통적인 API 통합
+
+```javascript
+// ❌ 각 서비스마다 다른 방식
+// Notion API
+const notion = new NotionClient({ auth: notionToken });
+const page = await notion.pages.retrieve({ page_id: '123' });
+
+// Slack API
+const slack = new WebClient(slackToken);
+const result = await slack.chat.postMessage({
+  channel: '#general',
+  text: 'Hello'
+});
+
+// Google Drive API
+const drive = google.drive({ version: 'v3', auth: googleAuth });
+const file = await drive.files.get({ fileId: '456' });
+```
+
+**문제점**:
+- 각 API마다 다른 인증 방식
+- 각 API마다 다른 데이터 구조
+- LLM이 직접 사용하기 어려움
+- 새로운 서비스 추가 시 많은 개발 비용
+
+### MCP 통합
+
+```javascript
+// ✅ 모든 서비스가 동일한 프로토콜 사용
+const client = new MCPClient();
+
+// Notion 페이지 읽기
+const notionPage = await client.readResource({
+  uri: 'notion://page/123'
+});
+
+// Slack 메시지 전송
+await client.callTool({
+  name: 'send_slack_message',
+  arguments: { channel: '#general', text: 'Hello' }
+});
+
+// Google Drive 파일 읽기
+const driveFile = await client.readResource({
+  uri: 'gdrive://file/456'
+});
+```
+
+**장점**:
+- 표준화된 인터페이스
+- LLM이 직접 활용 가능
+- 새로운 서비스 추가 간편
+- 서버만 교체하면 다른 LLM에서도 재사용 가능
+
+---
+
+## 실전 예제: MCP 서버 구축하기
+
+### 예제 1: Python으로 간단한 MCP 서버 만들기
+
+**시나리오**: 로컬 파일 시스템을 읽고 쓸 수 있는 MCP 서버
+
+#### 1단계: 프로젝트 설정
+
+```bash
+# 가상환경 생성
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# MCP SDK 설치
+pip install mcp anthropic-mcp
+```
+
+#### 2단계: 서버 코드 작성
+
+`file_server.py` 파일을 생성하세요:
+
+```python
+#!/usr/bin/env python3
+"""
+간단한 파일 시스템 MCP 서버
+파일 읽기/쓰기 기능을 MCP 프로토콜로 제공
+"""
+
+import asyncio
+from pathlib import Path
+from typing import Any
+from mcp.server import Server, NotificationOptions
+from mcp.server.models import InitializationOptions
+import mcp.server.stdio
+import mcp.types as types
+
+# 허용된 디렉토리 설정 (보안)
+ALLOWED_DIR = Path.home() / "mcp-files"
+ALLOWED_DIR.mkdir(exist_ok=True)
+
+# MCP 서버 인스턴스 생성
+server = Server("file-server")
+
+# 도구(Tools) 목록 제공
+@server.list_tools()
+async def handle_list_tools() -> list[types.Tool]:
+    """
+    이 서버가 제공하는 도구 목록을 반환합니다.
+    LLM은 이 목록을 보고 어떤 기능을 사용할 수 있는지 알게 됩니다.
+    """
+    return [
+        types.Tool(
+            name="read_file",
+            description="파일의 내용을 읽습니다",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "읽을 파일의 경로 (상대 경로)"
+                    }
+                },
+                "required": ["path"]
+            }
+        ),
+        types.Tool(
+            name="write_file",
+            description="파일에 내용을 씁니다",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "쓸 파일의 경로"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "파일에 쓸 내용"
+                    }
+                },
+                "required": ["path", "content"]
+            }
+        )
+    ]
+
+# 도구 실행 핸들러
+@server.call_tool()
+async def handle_call_tool(
+    name: str, arguments: dict[str, Any]
+) -> list[types.TextContent]:
+    """
+    LLM이 도구를 호출할 때 실행됩니다.
+    """
+    # 경로 검증 (보안)
+    requested_path = Path(arguments["path"])
+    full_path = (ALLOWED_DIR / requested_path).resolve()
+
+    if not str(full_path).startswith(str(ALLOWED_DIR)):
+        raise ValueError(f"접근 거부: 허용된 디렉토리 외부입니다")
+
+    if name == "read_file":
+        try:
+            content = full_path.read_text(encoding='utf-8')
+            return [types.TextContent(
+                type="text",
+                text=f"파일 내용:\n\n{content}"
+            )]
+        except FileNotFoundError:
+            return [types.TextContent(
+                type="text",
+                text=f"오류: 파일을 찾을 수 없습니다: {arguments['path']}"
+            )]
+
+    elif name == "write_file":
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(arguments["content"], encoding='utf-8')
+        return [types.TextContent(
+            type="text",
+            text=f"성공: 파일을 작성했습니다: {arguments['path']}"
+        )]
+
+    raise ValueError(f"알 수 없는 도구: {name}")
+
+# 서버 실행
+async def main():
+    """MCP 서버를 표준 입출력으로 실행합니다"""
+    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream,
+            write_stream,
+            InitializationOptions(
+                server_name="file-server",
+                server_version="1.0.0",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={}
+                )
+            )
+        )
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+#### 3단계: Claude Desktop에 서버 연결
+
+Claude Desktop 설정 파일(`~/Library/Application Support/Claude/claude_desktop_config.json`)을 수정하세요:
+
+```json
+{
+  "mcpServers": {
+    "file-server": {
+      "command": "python",
+      "args": [
+        "/path/to/your/file_server.py"
+      ]
+    }
+  }
+}
+```
+
+#### 4단계: 테스트
+
+Claude Desktop을 재시작한 후, 다음과 같이 요청해보세요:
+
+```
+"mcp-files 디렉토리에 hello.txt 파일을 만들고 'Hello MCP!'라고 써줘"
+```
+
+Claude가 자동으로 `write_file` 도구를 사용하여 파일을 생성합니다!
+
+---
+
+### 예제 2: TypeScript로 Slack MCP 서버 만들기
+
+**시나리오**: Slack 워크스페이스에 메시지를 보낼 수 있는 MCP 서버
+
+#### 1단계: 프로젝트 설정
+
+```bash
+# 프로젝트 디렉토리 생성
+mkdir mcp-slack-server
+cd mcp-slack-server
+
+# package.json 초기화
+npm init -y
+
+# 필요한 패키지 설치
+npm install @modelcontextprotocol/sdk @slack/web-api dotenv
+npm install -D @types/node typescript
+```
+
+#### 2단계: TypeScript 설정
+
+`tsconfig.json` 파일을 생성하세요:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
+```
+
+#### 3단계: 환경 변수 설정
+
+`.env` 파일을 생성하세요:
+
+```bash
+SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
+SLACK_WORKSPACE_ID=T01234567
+```
+
+#### 4단계: 서버 코드 작성
+
+`src/index.ts` 파일을 생성하세요:
+
+```typescript
+#!/usr/bin/env node
+
+/**
+ * Slack MCP 서버
+ * Slack 워크스페이스와 상호작용할 수 있는 MCP 서버
+ */
+
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { WebClient } from '@slack/web-api';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import dotenv from 'dotenv';
+
+// 환경 변수 로드
+dotenv.config();
+
+// Slack 클라이언트 초기화
+const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
+
+// MCP 서버 생성
+const server = new Server(
+  {
+    name: 'slack-server',
+    version: '1.0.0',
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
+
+// 도구 목록 제공
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: 'send_message',
+        description: 'Slack 채널에 메시지를 전송합니다',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            channel: {
+              type: 'string',
+              description: '메시지를 보낼 채널 (예: #general, C01234567)',
+            },
+            text: {
+              type: 'string',
+              description: '전송할 메시지 내용',
+            },
+            thread_ts: {
+              type: 'string',
+              description: '(선택) 스레드 타임스탬프 - 스레드로 답장하려면 제공',
+            },
+          },
+          required: ['channel', 'text'],
+        },
+      },
+      {
+        name: 'list_channels',
+        description: '워크스페이스의 모든 채널 목록을 가져옵니다',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_channel_history',
+        description: '특정 채널의 최근 메시지를 가져옵니다',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            channel: {
+              type: 'string',
+              description: '채널 ID (예: C01234567)',
+            },
+            limit: {
+              type: 'number',
+              description: '가져올 메시지 수 (기본값: 10)',
+            },
+          },
+          required: ['channel'],
+        },
+      },
+    ],
+  };
+});
+
+// 도구 실행 핸들러
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  try {
+    switch (name) {
+      case 'send_message': {
+        const result = await slack.chat.postMessage({
+          channel: args.channel as string,
+          text: args.text as string,
+          thread_ts: args.thread_ts as string | undefined,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `메시지 전송 성공!\n채널: ${args.channel}\n타임스탬프: ${result.ts}`,
+            },
+          ],
+        };
+      }
+
+      case 'list_channels': {
+        const result = await slack.conversations.list({
+          types: 'public_channel,private_channel',
+        });
+
+        const channels = result.channels?.map((ch) => ({
+          id: ch.id,
+          name: ch.name,
+          is_private: ch.is_private,
+          num_members: ch.num_members,
+        }));
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `채널 목록:\n${JSON.stringify(channels, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      case 'get_channel_history': {
+        const limit = (args.limit as number) || 10;
+        const result = await slack.conversations.history({
+          channel: args.channel as string,
+          limit,
+        });
+
+        const messages = result.messages?.map((msg) => ({
+          user: msg.user,
+          text: msg.text,
+          timestamp: msg.ts,
+        }));
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `최근 메시지:\n${JSON.stringify(messages, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      default:
+        throw new Error(`알 수 없는 도구: ${name}`);
+    }
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `오류 발생: ${error.message}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+});
+
+// 서버 실행
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+
+  console.error('Slack MCP 서버가 시작되었습니다');
+}
+
+main().catch((error) => {
+  console.error('서버 오류:', error);
+  process.exit(1);
+});
+```
+
+#### 5단계: 빌드 및 실행
+
+```bash
+# TypeScript 컴파일
+npx tsc
+
+# 실행 권한 부여
+chmod +x dist/index.js
+
+# Claude Desktop 설정에 추가
+```
+
+`claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "slack": {
+      "command": "node",
+      "args": [
+        "/path/to/mcp-slack-server/dist/index.js"
+      ],
+      "env": {
+        "SLACK_BOT_TOKEN": "xoxb-your-token"
+      }
+    }
+  }
+}
+```
+
+---
+
+## MCP의 핵심 기술 스펙
+
+### JSON-RPC 2.0 프로토콜
+
+MCP는 JSON-RPC 2.0을 메시지 교환 형식으로 사용합니다.
+
+**요청 예시**:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "send_slack_message",
+    "arguments": {
+      "channel": "#general",
+      "message": "Hello!"
+    }
+  }
+}
+```
+
+**응답 예시**:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "메시지 전송 성공!"
+      }
+    ]
+  }
+}
+```
+
+### 전송 메커니즘
+
+MCP는 두 가지 전송 방식을 지원합니다:
+
+#### 1. Stdio Transport (로컬)
+표준 입출력을 사용하여 로컬 프로세스와 통신합니다.
+
+```typescript
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+const transport = new StdioClientTransport({
+  command: 'python',
+  args: ['server.py']
+});
+```
+
+**사용 사례**: 로컬 도구, 파일 시스템 접근
+
+#### 2. HTTP with SSE (원격)
+Server-Sent Events를 사용하는 HTTP 연결입니다.
+
+```typescript
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+
+const transport = new SSEClientTransport(
+  new URL('https://api.example.com/mcp')
+);
+```
+
+**사용 사례**: 원격 API, 클라우드 서비스
+
+### 보안 고려사항
+
+MCP 서버를 구현할 때 다음 보안 원칙을 따르세요:
+
+```python
+# ✅ 좋은 예: 경로 검증
+def read_file(path: str) -> str:
+    # 1. 허용된 디렉토리 설정
+    allowed_dir = Path("/safe/directory")
+
+    # 2. 경로 정규화 및 검증
+    full_path = (allowed_dir / path).resolve()
+    if not str(full_path).startswith(str(allowed_dir)):
+        raise ValueError("경로 접근 거부")
+
+    # 3. 추가 검증
+    if full_path.suffix not in ['.txt', '.md', '.json']:
+        raise ValueError("허용되지 않는 파일 형식")
+
+    return full_path.read_text()
+```
+
+```python
+# ❌ 나쁜 예: 경로 검증 없음
+def read_file(path: str) -> str:
+    # 위험! 사용자가 "../../../etc/passwd" 같은 경로를 입력할 수 있음
+    return Path(path).read_text()
+```
+
+---
+
+## 장점과 한계
+
+### ✅ MCP의 장점
+
+#### 1. 표준화된 통합
+각 데이터 소스마다 맞춤형 통합을 개발할 필요가 없습니다.
+
+```javascript
+// Before MCP: 10개 서비스 = 10개의 다른 통합 코드
+// After MCP: 10개 서비스 = 10개의 MCP 서버 (모두 동일한 인터페이스)
+```
+
+#### 2. LLM 독립성
+한 번 만든 MCP 서버는 모든 MCP 호환 LLM에서 사용할 수 있습니다.
+
+#### 3. 재사용성
+커뮤니티에서 만든 MCP 서버를 바로 사용할 수 있습니다.
+
+```bash
+# 이미 만들어진 서버 활용
+npm install @modelcontextprotocol/server-github
+npm install @modelcontextprotocol/server-google-drive
+```
+
+#### 4. 보안
+데이터는 사용자의 인프라에서 관리되며, 각 도구 실행 전에 사용자 동의를 얻습니다.
+
+### ⚠️ MCP의 한계
+
+#### 1. 초기 학습 곡선
+JSON-RPC, 비동기 프로그래밍 개념 이해 필요
+
+#### 2. 아직 발전 중인 생태계
+2024년 11월 출시로 아직 초기 단계 (2025년 1월 기준)
+
+#### 3. 디버깅 복잡성
+클라이언트-서버 통신 문제 디버깅이 어려울 수 있음
+
+**디버깅 팁**:
+```python
+import logging
+
+# 상세 로깅 활성화
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# MCP 통신 로그 확인
+logger = logging.getLogger('mcp')
+logger.debug('도구 호출: %s', tool_name)
+```
+
+#### 4. 성능 오버헤드
+JSON-RPC 통신으로 인한 약간의 지연 (보통 무시할 수준)
+
+---
+
+## 실전 활용 시나리오
+
+### 시나리오 1: 개발자 어시스턴트
+
+**목표**: GitHub 이슈를 읽고, 코드를 분석하고, PR을 생성하는 AI 어시스턴트
+
+**필요한 MCP 서버**:
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "your-token"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+      "env": {
+        "ALLOWED_DIRECTORIES": "/path/to/projects"
+      }
+    }
+  }
+}
+```
+
+**사용 예시**:
+```
+"GitHub 이슈 #123을 읽고, 해당 버그를 수정하는 코드를 작성한 후 PR을 만들어줘"
+```
+
+AI가 자동으로:
+1. GitHub 서버로 이슈 내용 읽기
+2. Filesystem 서버로 관련 코드 분석
+3. 코드 수정
+4. GitHub 서버로 PR 생성
+
+### 시나리오 2: 데이터 분석 파이프라인
+
+**목표**: 데이터베이스에서 데이터를 가져와 분석하고 Slack으로 리포트 전송
+
+**필요한 MCP 서버**:
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "python",
+      "args": ["mcp-postgres-server.py"],
+      "env": {
+        "DB_CONNECTION": "postgresql://user:pass@localhost/db"
+      }
+    },
+    "slack": {
+      "command": "node",
+      "args": ["mcp-slack-server/dist/index.js"],
+      "env": {
+        "SLACK_BOT_TOKEN": "xoxb-your-token"
+      }
+    }
+  }
+}
+```
+
+**사용 예시**:
+```
+"어제의 매출 데이터를 분석해서 전주 대비 증감률을 계산하고, #sales 채널에 리포트를 보내줘"
+```
+
+### 시나리오 3: 컨텐츠 관리
+
+**목표**: Notion, Google Drive, 이메일을 통합 관리
+
+```json
+{
+  "mcpServers": {
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-notion"]
+    },
+    "gdrive": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-gdrive"]
+    },
+    "gmail": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-gmail"]
+    }
+  }
+}
+```
+
+**사용 예시**:
+```
+"이번 주에 받은 중요 이메일을 정리해서 Notion 회의록 페이지를 만들고,
+첨부파일은 Google Drive에 저장해줘"
+```
+
+---
+
+## 문제 해결
+
+### 문제 1: 서버가 연결되지 않음
+
+**증상**:
+```
+Error: Failed to connect to MCP server
+```
+
+**원인과 해결**:
+
+1. **서버 실행 권한 확인**
+```bash
+# 실행 권한 부여
+chmod +x server.py
+chmod +x dist/index.js
+```
+
+2. **의존성 설치 확인**
+```bash
+# Python
+pip list | grep mcp
+
+# Node.js
+npm list @modelcontextprotocol/sdk
+```
+
+3. **환경 변수 확인**
+```bash
+# .env 파일이 올바른 위치에 있는지 확인
+ls -la .env
+
+# 환경 변수가 제대로 로드되는지 테스트
+python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('YOUR_VAR'))"
+```
+
+### 문제 2: 도구 호출 실패
+
+**증상**:
+```
+Tool execution failed: Invalid arguments
+```
+
+**해결**:
+
+도구의 입력 스키마를 정확히 확인하세요:
+
+```python
+# ✅ 올바른 스키마
+{
+    "type": "object",
+    "properties": {
+        "channel": {"type": "string"},
+        "message": {"type": "string"}
+    },
+    "required": ["channel", "message"]  # 필수 필드 명시!
+}
+```
+
+### 문제 3: 성능 저하
+
+**증상**: MCP 서버 응답이 느림
+
+**해결**:
+
+1. **비동기 처리 최적화**
+```python
+# ❌ 동기 처리
+def get_data():
+    result1 = slow_operation_1()
+    result2 = slow_operation_2()
+    return result1, result2
+
+# ✅ 비동기 병렬 처리
+async def get_data():
+    result1, result2 = await asyncio.gather(
+        slow_operation_1(),
+        slow_operation_2()
+    )
+    return result1, result2
+```
+
+2. **캐싱 구현**
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def expensive_computation(param):
+    # 비용이 큰 연산
+    return result
+```
+
+---
+
+## 다음 단계
+
+### 추가 학습 자료
+
+**공식 문서**:
+- [MCP 공식 사이트](https://modelcontextprotocol.io)
+- [MCP 명세 문서](https://spec.modelcontextprotocol.io)
+- [SDK 문서](https://github.com/modelcontextprotocol)
+
+**한국어 자료**:
+- [FrontOverflow MCP 매거진](https://frontoverflow.com/mcp-magazine)
+- [Digital Bourgeois - MCP Python 가이드](https://digitalbourgeois.com/mcp-python)
+- [WikiDocs MCP 가이드](https://wikidocs.net/mcp-guide)
+
+**커뮤니티**:
+- [GitHub Discussions](https://github.com/modelcontextprotocol/discussions)
+- [Discord 커뮤니티](https://discord.gg/modelcontextprotocol)
+
+### 실습 과제
+
+#### 초급: To-Do MCP 서버
+로컬 JSON 파일로 할 일 목록을 관리하는 MCP 서버를 만들어보세요.
+
+**필요한 도구**:
+- `add_todo(title, description)`
+- `list_todos()`
+- `complete_todo(id)`
+- `delete_todo(id)`
+
+#### 중급: 웹 스크래핑 MCP 서버
+웹페이지를 스크래핑하는 MCP 서버를 만들어보세요.
+
+**필요한 도구**:
+- `scrape_page(url)` - 웹페이지 내용 추출
+- `extract_links(url)` - 링크 목록 추출
+- `get_metadata(url)` - 메타데이터 추출
+
+#### 고급: 멀티 서비스 통합
+여러 MCP 서버를 연동하여 복잡한 워크플로우를 자동화해보세요.
+
+**예시**: 이메일로 받은 첨부파일을 Google Drive에 저장하고, Notion에 요약 페이지를 생성
+
+---
+
+## 마치며
+
+MCP는 AI 애플리케이션 개발의 패러다임을 바꾸고 있습니다. 단순히 LLM과 대화하는 것을 넘어, 실제 업무 도구들과 연결하여 강력한 AI 에이전트를 만들 수 있게 되었습니다.
+
+**핵심 요약**:
+- ✅ MCP는 LLM과 외부 도구를 연결하는 표준 프로토콜
+- ✅ 한 번 만든 MCP 서버는 모든 호환 LLM에서 재사용 가능
+- ✅ Python, TypeScript 등 다양한 언어로 구현 가능
+- ✅ Resources, Tools, Prompts 세 가지 핵심 기능 제공
+- ✅ 보안과 표준화를 동시에 달성
+
+이제 여러분의 프로젝트에 MCP를 적용해보세요! 🚀
+
+---
+
+## 부록: 유용한 MCP 서버 목록
+
+### 공식 MCP 서버
+
+| 서버 | 기능 | 패키지명 |
+|------|------|---------|
+| Filesystem | 파일 시스템 접근 | `@modelcontextprotocol/server-filesystem` |
+| GitHub | GitHub API 통합 | `@modelcontextprotocol/server-github` |
+| Google Drive | Google Drive 연동 | `@modelcontextprotocol/server-gdrive` |
+| Slack | Slack 메시징 | `@modelcontextprotocol/server-slack` |
+| PostgreSQL | PostgreSQL DB 접근 | `@modelcontextprotocol/server-postgres` |
+
+### 커뮤니티 MCP 서버
+
+- [mcp-server-notion](https://github.com/user/mcp-notion) - Notion API 통합
+- [mcp-server-linear](https://github.com/user/mcp-linear) - Linear 이슈 트래킹
+- [mcp-server-figma](https://github.com/user/mcp-figma) - Figma 디자인 파일 접근
+
+**더 많은 서버**: [MCP Server Registry](https://github.com/modelcontextprotocol/servers)
+
+---
+
+**문서 버전**: 1.0.0
+**최종 업데이트**: 2025-01-18
+**라이선스**: CC BY 4.0
+**피드백**: [GitHub Issues](https://github.com/your-repo/issues)
