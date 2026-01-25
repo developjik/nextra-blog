@@ -1,0 +1,927 @@
+---
+title: 'AWS CloudWatch 완벽 가이드'
+date: '2026-01-26'
+description: 'AWS CloudWatch를 이해하고 Next.js 애플리케이션에 로그 모니터링과 알람을 설정하는 방법을 배우는 완벽 가이드입니다.'
+tags: ['AWS', 'CloudWatch', 'Next.js', '모니터링', '가이드', '로그', 'observability']
+---
+
+import { JsonLd } from '~/app/_components'
+
+<JsonLd
+  metadata={{
+    title: 'AWS CloudWatch 완벽 가이드',
+    description: 'AWS CloudWatch를 이해하고 Next.js 애플리케이션에 로그 모니터링과 알람을 설정하는 방법을 배우는 완벽 가이드입니다.',
+    date: '2026-01-26',
+    slug: 'aws-cloudwatch-guide',
+    tags: ['AWS', 'CloudWatch', 'Next.js', '모니터링', '가이드', '로그', 'observability'],
+  }}
+/>
+
+## 📋 문서 정보
+
+- **문서 유형**: Concept Explanation + How-To Guide
+- **대상 독자**: 프론트엔드 개발자 (초급~중급)
+- **주요 목표**: CloudWatch를 이해하고 Next.js 애플리케이션 모니터링에 활용
+- **소요 시간**: 약 30분
+
+---
+
+## 개요
+
+AWS CloudWatch는 AWS 리소스와 애플리케이션을 실시간으로 모니터링하는 서비스입니다. 이 가이드에서는 CloudWatch의 핵심 개념을 이해하고, Next.js 애플리케이션에 로그 모니터링과 알람을 설정하는 방법을 알아봅니다.
+
+CloudWatch를 활용하면 프로덕션 환경에서 발생하는 에러를 즉시 파악하고, 사용자 행동 패턴을 분석하며, 시스템 성능을 실시간으로 추적할 수 있습니다.
+
+---
+
+## CloudWatch가 무엇인가요?
+
+### 핵심 개념
+
+CloudWatch는 AWS의 **통합 모니터링 및 관찰성 서비스**입니다. 서버, 데이터베이스, 애플리케이션의 상태를 한곳에서 모니터링하고, 문제가 발생하면 자동으로 알림을 받을 수 있습니다.
+
+간단히 말하면, CloudWatch는 여러분의 애플리케이션에 설치하는 "블랙박스"와 같습니다. 애플리케이션에서 무슨 일이 일어나는지 기록하고, 이상 징후를 감지하면 알려줍니다.
+
+### 왜 필요한가요?
+
+프론트엔드 애플리케이션을 배포하면 다음과 같은 상황에 직면합니다:
+
+- **문제 파악의 어려움**: 사용자가 "에러가 났어요"라고 말하지만, 정확히 무슨 에러인지 모름
+- **성능 저하 감지 지연**: 페이지 로딩이 느려져도 개발자는 모름
+- **데이터 손실**: 브라우저 콘솔 로그는 사용자가 창을 닫으면 사라짐
+- **트러블슈팅 시간 낭비**: 문제 재현이 어려워 디버깅에 시간이 오래 걸림
+
+CloudWatch는 이러한 문제를 해결합니다.
+
+---
+
+## CloudWatch의 주요 구성 요소
+
+### 1. CloudWatch Logs (로그)
+
+애플리케이션의 모든 활동을 기록하는 장소입니다.
+
+```javascript
+// 예시: 프론트엔드에서 발생한 로그
+console.log('사용자가 로그인함'); // → CloudWatch Logs에 저장
+console.error('결제 API 호출 실패'); // → CloudWatch Logs에 저장
+```
+
+**주요 용어**:
+- **Log Group**: 로그를 담는 폴더 (예: `/aws/lambda/my-function`)
+- **Log Stream**: 특정 인스턴스나 세션의 로그 흐름
+- **Log Event**: 개별 로그 메시지
+
+### 2. CloudWatch Metrics (메트릭)
+
+시스템 성능을 숫자로 측정합니다.
+
+**기본 제공 메트릭**:
+- CPU 사용률
+- 메모리 사용량
+- 네트워크 트래픽
+- HTTP 요청 수
+
+**커스텀 메트릭** (직접 정의 가능):
+- API 응답 시간
+- 페이지 로딩 시간
+- 사용자 액션 횟수
+- 에러 발생 빈도
+
+### 3. CloudWatch Alarms (알람)
+
+메트릭이 특정 임계값을 초과하면 자동으로 알립니다.
+
+```
+예시 알람 설정:
+- 조건: API 에러율이 5%를 초과하면
+- 액션: Slack으로 알림 전송 + 이메일 발송
+```
+
+### 4. CloudWatch Dashboards (대시보드)
+
+여러 메트릭을 시각적으로 한눈에 모니터링합니다.
+
+---
+
+## 동작 원리
+
+CloudWatch는 다음과 같은 흐름으로 작동합니다:
+
+```
+1. 애플리케이션에서 로그/메트릭 생성
+   ↓
+2. CloudWatch로 데이터 전송
+   ↓
+3. CloudWatch에 데이터 저장 및 분석
+   ↓
+4. 대시보드에서 시각화 또는 알람 트리거
+   ↓
+5. 개발자에게 알림 전송 (필요시)
+```
+
+### 시각적 예시
+
+```
+[Next.js App] ───로그 전송──→ [CloudWatch Logs]
+     │                              │
+     │                              ├─→ [Log Insights로 검색]
+     │                              │
+     └──메트릭 전송──→ [CloudWatch Metrics]
+                                    │
+                                    ├─→ [대시보드에 표시]
+                                    │
+                                    └─→ [알람 확인]
+                                         │
+                                         └─→ [Slack/Email 알림]
+```
+
+---
+
+## Next.js에서 CloudWatch 사용하기
+
+### 사전 준비
+
+다음이 준비되어 있어야 합니다:
+
+- Node.js 18 이상
+- AWS 계정 및 IAM 사용자 (CloudWatch 권한 필요)
+- Next.js 프로젝트
+- AWS CLI 설치 및 구성
+
+### 1단계: AWS SDK 설치
+
+프로젝트에 필요한 패키지를 설치하세요:
+
+```bash
+npm install @aws-sdk/client-cloudwatch-logs
+npm install winston winston-cloudwatch
+```
+
+**설명**:
+- `@aws-sdk/client-cloudwatch-logs`: AWS CloudWatch Logs API 클라이언트
+- `winston`: Node.js 로깅 라이브러리
+- `winston-cloudwatch`: Winston에서 CloudWatch로 로그를 전송하는 플러그인
+
+### 2단계: 로거 설정
+
+`lib/logger.ts` 파일을 생성하고 다음 코드를 추가하세요:
+
+```typescript
+import winston from 'winston';
+import WinstonCloudWatch from 'winston-cloudwatch';
+
+// CloudWatch 로그 스트림 이름 생성 (타임스탬프 포함)
+const logStreamName = `next-app-${new Date().toISOString().split('T')[0]}`;
+
+// Winston 로거 생성
+const logger = winston.createLogger({
+  level: 'info', // 로그 레벨: debug < info < warn < error
+  format: winston.format.json(), // JSON 형식으로 로그 저장
+  transports: [
+    // 콘솔 출력 (개발 환경)
+    new winston.transports.Console({
+      format: winston.format.simple(),
+    }),
+  ],
+});
+
+// 프로덕션 환경에서만 CloudWatch 전송 활성화
+if (process.env.NODE_ENV === 'production') {
+  logger.add(
+    new WinstonCloudWatch({
+      logGroupName: '/aws/nextjs/my-app', // 로그 그룹 이름
+      logStreamName: logStreamName,
+      awsRegion: process.env.AWS_REGION || 'ap-northeast-2', // 서울 리전
+      awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      awsSecretKey: process.env.AWS_SECRET_ACCESS_KEY,
+      messageFormatter: ({ level, message, meta }) => {
+        // 로그 메시지 포맷 커스터마이징
+        return `[${level}] ${message} ${JSON.stringify(meta)}`;
+      },
+    })
+  );
+}
+
+export default logger;
+```
+
+### 3단계: 환경 변수 설정
+
+`.env.local` 파일에 AWS 자격 증명을 추가하세요:
+
+```bash
+AWS_REGION=ap-northeast-2
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+```
+
+**보안 주의사항**:
+- ⚠️ `.env.local` 파일은 절대 Git에 커밋하지 마세요
+- `.gitignore`에 `.env.local`이 포함되어 있는지 확인하세요
+- 프로덕션에서는 AWS IAM Role 사용을 권장합니다
+
+### 4단계: 애플리케이션에서 로거 사용
+
+#### 4-1. API 라우트에서 로그 기록
+
+`app/api/users/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import logger from '@/lib/logger';
+
+export async function GET(request: NextRequest) {
+  try {
+    // 1. 요청 로그 기록
+    logger.info('사용자 목록 조회 API 호출', {
+      timestamp: new Date().toISOString(),
+      userAgent: request.headers.get('user-agent'),
+    });
+
+    // 2. 데이터 조회
+    const users = await fetchUsers();
+
+    // 3. 성공 로그
+    logger.info('사용자 목록 조회 성공', {
+      count: users.length,
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json(users);
+  } catch (error) {
+    // 4. 에러 로그 (중요!)
+    logger.error('사용자 목록 조회 실패', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json(
+      { error: '사용자 목록을 불러오는데 실패했습니다' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+#### 4-2. 클라이언트 컴포넌트에서 에러 추적
+
+`components/UserList.tsx`:
+
+```typescript
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export default function UserList() {
+  const [users, setUsers] = useState([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadUsers() {
+      try {
+        const response = await fetch('/api/users');
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setUsers(data);
+
+        // 성공 로그를 서버로 전송
+        await fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            level: 'info',
+            message: '사용자 목록 로딩 성공',
+            meta: { count: data.length },
+          }),
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        setError(errorMessage);
+
+        // 에러 로그를 서버로 전송
+        await fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            level: 'error',
+            message: '사용자 목록 로딩 실패',
+            meta: { error: errorMessage },
+          }),
+        });
+      }
+    }
+
+    loadUsers();
+  }, []);
+
+  if (error) return <div>에러: {error}</div>;
+  if (!users.length) return <div>로딩 중...</div>;
+
+  return (
+    <ul>
+      {users.map((user: any) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+#### 4-3. 로그 전송 API 엔드포인트 생성
+
+`app/api/logs/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import logger from '@/lib/logger';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { level, message, meta } = await request.json();
+
+    // 로그 레벨에 따라 적절한 로거 메서드 호출
+    switch (level) {
+      case 'error':
+        logger.error(message, meta);
+        break;
+      case 'warn':
+        logger.warn(message, meta);
+        break;
+      case 'info':
+      default:
+        logger.info(message, meta);
+        break;
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('로그 전송 실패:', error);
+    return NextResponse.json(
+      { success: false, error: 'Log transmission failed' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### 5단계: CloudWatch 로그 확인
+
+1. **AWS Console에 로그인**하세요
+2. **CloudWatch 서비스**로 이동하세요
+3. 왼쪽 메뉴에서 **Logs > Log groups**를 선택하세요
+4. `/aws/nextjs/my-app` 로그 그룹을 찾으세요
+5. 로그 스트림을 클릭하면 **실시간 로그**를 확인할 수 있습니다
+
+**예상 결과**:
+```json
+{
+  "level": "info",
+  "message": "사용자 목록 조회 API 호출",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "userAgent": "Mozilla/5.0..."
+}
+```
+
+---
+
+## CloudWatch Logs Insights로 로그 검색
+
+### 기본 쿼리
+
+CloudWatch Console에서 **Logs Insights**를 사용하면 로그를 강력하게 검색할 수 있습니다.
+
+#### 1. 최근 에러 로그 찾기
+
+```sql
+fields @timestamp, message, error
+| filter level = "error"
+| sort @timestamp desc
+| limit 20
+```
+
+#### 2. 특정 시간대의 로그 필터링
+
+```sql
+fields @timestamp, message
+| filter @timestamp >= "2024-01-15T00:00:00.000Z"
+    and @timestamp < "2024-01-16T00:00:00.000Z"
+| sort @timestamp desc
+```
+
+#### 3. API 응답 시간 분석
+
+```sql
+fields @timestamp, message, duration
+| filter message like /API 호출/
+| stats avg(duration) as avg_duration,
+        max(duration) as max_duration,
+        count() as request_count
+  by bin(@timestamp, 1h)
+```
+
+#### 4. 에러 빈도 계산
+
+```sql
+fields @timestamp, error
+| filter level = "error"
+| stats count() as error_count by error
+| sort error_count desc
+```
+
+---
+
+## CloudWatch 알람 설정
+
+### 알람 생성 예시: API 에러율 모니터링
+
+**시나리오**: API 에러율이 5%를 초과하면 Slack으로 알림 받기
+
+#### 1단계: SNS 토픽 생성
+
+```bash
+# AWS CLI로 SNS 토픽 생성
+aws sns create-topic --name api-error-alerts
+
+# 이메일 구독 추가
+aws sns subscribe \
+  --topic-arn arn:aws:sns:ap-northeast-2:123456789:api-error-alerts \
+  --protocol email \
+  --notification-endpoint your-email@example.com
+```
+
+#### 2단계: 메트릭 필터 생성
+
+CloudWatch Console에서:
+
+1. **Logs > Log groups** > `/aws/nextjs/my-app` 선택
+2. **Metric filters** 탭 클릭
+3. **Create metric filter** 클릭
+4. **필터 패턴** 입력:
+   ```
+   [level = "error"]
+   ```
+5. **메트릭 이름**: `APIErrorCount`
+6. **메트릭 네임스페이스**: `NextJS/App`
+7. **메트릭 값**: `1`
+
+#### 3단계: 알람 생성
+
+1. **CloudWatch > Alarms > Create alarm** 클릭
+2. **메트릭 선택**: `NextJS/App > APIErrorCount`
+3. **조건 설정**:
+   - Threshold type: Static
+   - Whenever APIErrorCount is: Greater than 10
+   - Datapoints to alarm: 1 out of 1
+4. **알림 설정**:
+   - SNS 토픽: `api-error-alerts` 선택
+5. **알람 이름**: `API-Error-Rate-High`
+
+**결과**: 1분 동안 에러가 10건 이상 발생하면 이메일/Slack 알림을 받습니다.
+
+---
+
+## 커스텀 메트릭 전송
+
+### 페이지 로딩 시간 측정
+
+`lib/metrics.ts`:
+
+```typescript
+import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
+
+const cloudwatch = new CloudWatchClient({
+  region: process.env.AWS_REGION || 'ap-northeast-2',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+/**
+ * CloudWatch에 커스텀 메트릭 전송
+ */
+export async function sendMetric(
+  metricName: string,
+  value: number,
+  unit: 'Seconds' | 'Count' | 'Milliseconds' = 'Count'
+) {
+  try {
+    const command = new PutMetricDataCommand({
+      Namespace: 'NextJS/Performance', // 메트릭 네임스페이스
+      MetricData: [
+        {
+          MetricName: metricName,
+          Value: value,
+          Unit: unit,
+          Timestamp: new Date(),
+        },
+      ],
+    });
+
+    await cloudwatch.send(command);
+    console.log(`메트릭 전송 성공: ${metricName} = ${value}`);
+  } catch (error) {
+    console.error('메트릭 전송 실패:', error);
+  }
+}
+```
+
+### 사용 예시
+
+`app/page.tsx`:
+
+```typescript
+'use client';
+
+import { useEffect } from 'react';
+
+export default function Home() {
+  useEffect(() => {
+    // 페이지 로딩 시간 측정
+    if (typeof window !== 'undefined' && window.performance) {
+      const loadTime = window.performance.timing.loadEventEnd -
+                       window.performance.timing.navigationStart;
+
+      // CloudWatch로 메트릭 전송
+      fetch('/api/metrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          metricName: 'PageLoadTime',
+          value: loadTime,
+          unit: 'Milliseconds',
+        }),
+      });
+    }
+  }, []);
+
+  return <div>메인 페이지</div>;
+}
+```
+
+`app/api/metrics/route.ts`:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { sendMetric } from '@/lib/metrics';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { metricName, value, unit } = await request.json();
+    await sendMetric(metricName, value, unit);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('메트릭 전송 API 에러:', error);
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
+}
+```
+
+---
+
+## 실전 활용 사례
+
+### 사례 1: 실시간 에러 모니터링
+
+**목표**: 프로덕션에서 발생하는 모든 JavaScript 에러를 CloudWatch에 기록
+
+**구현**:
+
+```typescript
+// app/error-boundary.tsx
+'use client';
+
+import { useEffect } from 'react';
+
+export default function GlobalErrorBoundary({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
+  useEffect(() => {
+    // 에러를 CloudWatch로 전송
+    fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        level: 'error',
+        message: 'Global error boundary caught an error',
+        meta: {
+          error: error.message,
+          stack: error.stack,
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+        },
+      }),
+    });
+  }, [error]);
+
+  return (
+    <div>
+      <h2>문제가 발생했습니다</h2>
+      <button onClick={reset}>다시 시도</button>
+    </div>
+  );
+}
+```
+
+### 사례 2: API 응답 시간 추적
+
+**목표**: 각 API 엔드포인트의 평균 응답 시간 모니터링
+
+**구현**:
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const startTime = Date.now();
+
+  // 응답 생성
+  const response = NextResponse.next();
+
+  // 응답 시간 계산
+  const duration = Date.now() - startTime;
+
+  // 응답 헤더에 duration 추가 (로깅 용도)
+  response.headers.set('X-Response-Time', `${duration}ms`);
+
+  // CloudWatch로 메트릭 전송 (비동기)
+  fetch('/api/metrics', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      metricName: 'APIResponseTime',
+      value: duration,
+      unit: 'Milliseconds',
+    }),
+  }).catch(console.error);
+
+  return response;
+}
+
+export const config = {
+  matcher: '/api/:path*', // API 라우트에만 적용
+};
+```
+
+### 사례 3: 사용자 행동 분석
+
+**목표**: 주요 사용자 액션을 CloudWatch 메트릭으로 기록
+
+**구현**:
+
+```typescript
+// hooks/useAnalytics.ts
+import { useCallback } from 'react';
+
+export function useAnalytics() {
+  const trackEvent = useCallback(async (eventName: string, metadata?: object) => {
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        level: 'info',
+        message: `User event: ${eventName}`,
+        meta: {
+          event: eventName,
+          timestamp: new Date().toISOString(),
+          ...metadata,
+        },
+      }),
+    });
+  }, []);
+
+  return { trackEvent };
+}
+
+// 사용 예시
+function CheckoutButton() {
+  const { trackEvent } = useAnalytics();
+
+  const handleClick = async () => {
+    // 사용자 액션 추적
+    await trackEvent('checkout_initiated', {
+      cartValue: 50000,
+      itemCount: 3,
+    });
+
+    // 실제 체크아웃 로직
+    window.location.href = '/checkout';
+  };
+
+  return <button onClick={handleClick}>결제하기</button>;
+}
+```
+
+---
+
+## 장점과 한계
+
+### 장점
+
+- ✅ **통합 모니터링**: AWS의 모든 서비스를 한곳에서 모니터링
+- ✅ **실시간 알림**: 문제 발생 즉시 팀에게 알림
+- ✅ **강력한 검색**: Logs Insights로 복잡한 쿼리 실행
+- ✅ **자동 확장**: 트래픽 증가해도 자동으로 확장됨
+- ✅ **비용 효율적**: 사용한 만큼만 비용 지불
+- ✅ **장기 보관**: 로그를 S3에 아카이빙하여 장기 보관 가능
+
+### 한계
+
+- ⚠️ **학습 곡선**: AWS 서비스에 익숙하지 않으면 초기 설정이 복잡함
+- ⚠️ **비용 관리 필요**: 로그가 많으면 비용이 증가할 수 있음
+- ⚠️ **지연 시간**: 실시간이지만 1-2초 정도의 지연이 있을 수 있음
+- ⚠️ **AWS 종속성**: AWS 생태계에 Lock-in됨
+
+### 트레이드오프
+
+**언제 CloudWatch를 사용해야 하나요?**
+- ✅ 이미 AWS 인프라를 사용 중인 경우
+- ✅ 여러 AWS 서비스를 통합 모니터링하려는 경우
+- ✅ 엔터프라이즈급 안정성이 필요한 경우
+
+**언제 대안을 고려해야 하나요?**
+- 🤔 AWS를 사용하지 않는 경우 → **Datadog, New Relic**
+- 🤔 간단한 에러 추적만 필요한 경우 → **Sentry, LogRocket**
+- 🤔 오픈소스 솔루션을 선호하는 경우 → **Grafana + Loki**
+
+---
+
+## 비용 최적화 팁
+
+### 1. 로그 보존 기간 설정
+
+```bash
+# AWS CLI로 로그 보존 기간을 30일로 설정
+aws logs put-retention-policy \
+  --log-group-name /aws/nextjs/my-app \
+  --retention-in-days 30
+```
+
+**효과**: 오래된 로그는 자동 삭제되어 스토리지 비용 절감
+
+### 2. 로그 레벨 조정
+
+```typescript
+// 프로덕션에서는 info 이상만 기록
+const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  // ...
+});
+```
+
+### 3. 불필요한 로그 필터링
+
+```typescript
+// 헬스체크 요청은 로그에서 제외
+if (request.url.includes('/health')) {
+  return NextResponse.json({ status: 'ok' });
+}
+
+logger.info('API 요청', { ... });
+```
+
+### 4. 로그 샘플링
+
+```typescript
+// 10% 확률로만 로그 기록 (트래픽이 매우 많은 경우)
+if (Math.random() < 0.1) {
+  logger.info('사용자 행동', { ... });
+}
+```
+
+---
+
+## 문제 해결
+
+### 문제 1: 로그가 CloudWatch에 표시되지 않음
+
+**증상**:
+- 로컬에서는 로그가 콘솔에 출력되지만 CloudWatch에는 나타나지 않음
+
+**원인**:
+1. AWS 자격 증명이 잘못됨
+2. IAM 권한 부족
+3. 로그 그룹/스트림이 생성되지 않음
+
+**해결 방법**:
+
+```bash
+# 1. AWS 자격 증명 확인
+aws sts get-caller-identity
+
+# 2. 로그 그룹 존재 확인
+aws logs describe-log-groups --log-group-name-prefix /aws/nextjs
+
+# 3. 수동으로 로그 그룹 생성
+aws logs create-log-group --log-group-name /aws/nextjs/my-app
+```
+
+### 문제 2: "Rate exceeded" 에러
+
+**증상**:
+```
+ThrottlingException: Rate exceeded
+```
+
+**원인**: 너무 많은 로그를 빠르게 전송함
+
+**해결 방법**:
+
+```typescript
+// 로그 배치 처리 (winston-cloudwatch 옵션)
+new WinstonCloudWatch({
+  logGroupName: '/aws/nextjs/my-app',
+  logStreamName: logStreamName,
+  uploadRate: 2000, // 2초마다 업로드
+  batchSize: 100,   // 100개씩 묶어서 전송
+  // ...
+})
+```
+
+### 문제 3: 메트릭이 표시되지 않음
+
+**증상**: 커스텀 메트릭을 전송했지만 CloudWatch에서 보이지 않음
+
+**원인**: 메트릭 전송 후 1-2분의 지연 시간이 있음
+
+**해결 방법**:
+1. 5분 정도 기다린 후 새로고침
+2. AWS Console에서 메트릭 네임스페이스를 올바르게 선택했는지 확인
+3. CLI로 메트릭 확인:
+
+```bash
+aws cloudwatch list-metrics --namespace NextJS/Performance
+```
+
+---
+
+## 다음 단계
+
+CloudWatch의 기초를 익혔다면 다음 주제를 학습해보세요:
+
+### 심화 학습
+- [CloudWatch Container Insights로 ECS/EKS 모니터링](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights.html)
+- [CloudWatch Synthetics로 사용자 경험 모니터링](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Synthetics_Canaries.html)
+- [CloudWatch ServiceLens로 분산 추적](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ServiceLens.html)
+
+### 실전 프로젝트
+- Next.js 앱에 대시보드 구축하기
+- Slack 알림 봇 만들기
+- 자동화된 에러 리포트 생성
+
+### 관련 AWS 서비스
+- **AWS X-Ray**: 애플리케이션 요청 추적 및 성능 분석
+- **AWS CloudTrail**: AWS API 호출 기록 (보안 감사)
+- **Amazon EventBridge**: 이벤트 기반 자동화
+
+---
+
+## 참고 자료
+
+### 공식 문서
+- [AWS CloudWatch 공식 문서](https://docs.aws.amazon.com/cloudwatch/)
+- [CloudWatch Logs Insights 쿼리 문법](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html)
+- [AWS SDK for JavaScript v3](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/)
+
+### 커뮤니티
+- [AWS re:Post](https://repost.aws.com/) - AWS 공식 Q&A
+- [AWS CloudWatch 블로그](https://aws.amazon.com/blogs/mt/)
+
+### 도구
+- [CloudWatch Dashboard Templates](https://github.com/aws-samples/amazon-cloudwatch-dashboard-samples)
+- [Winston Logger 문서](https://github.com/winstonjs/winston)
+
+---
+
+## 요약
+
+이 가이드에서 다룬 내용:
+
+1. ✅ CloudWatch의 핵심 개념 (Logs, Metrics, Alarms, Dashboards)
+2. ✅ Next.js 애플리케이션에 CloudWatch Logs 통합
+3. ✅ CloudWatch Logs Insights로 로그 검색
+4. ✅ CloudWatch Alarms 설정으로 자동 알림
+5. ✅ 커스텀 메트릭 전송 및 모니터링
+6. ✅ 실전 활용 사례 (에러 추적, 성능 모니터링, 사용자 분석)
+7. ✅ 비용 최적화 및 문제 해결
+
+이제 여러분의 Next.js 애플리케이션에 CloudWatch를 적용하여 프로덕션 환경을 더 안전하고 투명하게 모니터링할 수 있습니다! 🎉
+
+---
+
+**버전**: 1.0.0
+**최종 수정**: 2026-01-26
+**작성자**: Claude (Anthropic)
+**라이선스**: MIT
