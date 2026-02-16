@@ -1,0 +1,683 @@
+import { JsonLd } from '~/app/_components'
+
+<JsonLd
+  metadata={{
+    title: 'Edge Runtime 이해하기',
+    description: 'Next.js Edge Runtime의 동작 원리와 사용 방법을 완벽 정리합니다. Node.js Runtime과의 차이점, 전역 배포, 빠른 콜드 스타트, Web Standard API, 그리고 미들웨어 활용법을 알아봅니다.',
+    date: '2026-02-16',
+    slug: 'understanding-edge-runtime',
+    tags: ['Next.js', 'Edge Runtime', 'Vercel', 'Middleware', 'Serverless', 'Performance', '가이드'],
+  }}
+/>
+
+# Edge Runtime 이해하기
+
+## 📋 문서 개요
+
+Edge Runtime은 Next.js에서 제공하는 경량화된 JavaScript 런타임 환경으로, 전통적인 Node.js 런타임과 다른 특성을 가지고 있습니다. 이 문서에서는 Edge Runtime의 동작 원리, 사용 시기, 그리고 실제 활용 방법을 알아봅니다.
+
+**이 문서를 읽으면 다음을 할 수 있습니다:**
+- Edge Runtime과 Node.js Runtime의 차이를 이해할 수 있습니다
+- 언제 Edge Runtime을 사용해야 하는지 판단할 수 있습니다
+- Edge Runtime의 제약사항을 파악하고 대응할 수 있습니다
+- 실제 프로젝트에 Edge Runtime을 적용할 수 있습니다
+
+---
+
+## 배경
+
+### 왜 Edge Runtime이 필요한가?
+
+전통적인 서버리스 함수(Node.js Runtime)는 콜드 스타트 시간이 길고, 메모리 사용량이 많습니다. 특히 다음과 같은 상황에서 문제가 됩니다:
+
+- **전역 사용자 대응**: 미국의 서버에서 한국 사용자의 요청을 처리하면 네트워크 지연이 발생합니다
+- **빠른 응답 필요**: 인증, 리다이렉션, A/B 테스팅 등은 밀리초 단위의 응답이 중요합니다
+- **높은 트래픽**: 많은 동시 요청을 처리해야 할 때 서버 비용이 급증합니다
+
+### Edge Runtime 등장 이전의 방식
+
+```javascript
+// Next.js 12 이전 - API Routes (Node.js Runtime)
+export default async function handler(req, res) {
+  // Node.js 전체 API 사용 가능
+  const fs = require('fs');
+  const data = fs.readFileSync('./data.json');
+
+  res.status(200).json({ data });
+}
+```
+
+**문제점:**
+- 콜드 스타트: 첫 요청 시 300-500ms 소요
+- 지역 제한: 특정 리전(예: us-east-1)에서만 실행
+- 높은 메모리 사용: 기본 128MB 이상
+
+---
+
+## 동작 원리
+
+### 핵심 메커니즘
+
+Edge Runtime은 Vercel의 Edge Network에서 실행되는 경량 JavaScript 런타임입니다. V8 엔진을 기반으로 하며, Web Standard API만을 지원합니다.
+
+#### 1. 전역 배포 (Global Distribution)
+
+```
+사용자 요청 → 가장 가까운 Edge 노드에서 실행
+```
+
+**기존 방식 (Node.js Runtime)**
+```
+한국 사용자 → [인터넷 횡단] → 미국 서버 (300ms+)
+```
+
+**Edge Runtime 방식**
+```
+한국 사용자 → 서울 Edge (< 50ms)
+미국 사용자 → 버지니아 Edge (< 50ms)
+일본 사용자 → 도쿄 Edge (< 50ms)
+```
+
+#### 2. 빠른 시작 (Fast Cold Start)
+
+Edge Runtime은 필요한 최소한의 API만 제공하므로 즉시 시작됩니다:
+
+```javascript
+// Edge Runtime - 밀리초 단위 시작
+export const runtime = 'edge';
+
+export async function GET(request) {
+  // 즉시 실행 (< 10ms)
+  return Response.json({ message: 'Fast response!' });
+}
+```
+
+#### 3. 제한된 API (Lightweight)
+
+Edge Runtime은 Web Standard API만 지원합니다:
+
+```javascript
+// ✅ Edge Runtime에서 사용 가능
+- fetch()
+- Request/Response
+- Headers
+- URL
+- crypto
+- Web Streams API
+
+// ❌ Edge Runtime에서 사용 불가
+- Node.js fs 모듈
+- Node.js crypto 모듈
+- Node.js path 모듈
+- Native Node.js APIs
+```
+
+---
+
+## 주요 특징
+
+### 특징 1: 지역 제한 없음 (No Regional Constraints)
+
+**Node.js Runtime:**
+```javascript
+// us-east-1 리전에서만 실행
+export default function handler(req, res) {
+  // 한국 사용자는 긴 지연 시간 경험
+}
+```
+
+**Edge Runtime:**
+```javascript
+export const runtime = 'edge';
+
+export async function GET(request) {
+  // 사용자 위치에 가장 가까운 Edge에서 실행
+  return new Response('Fast!');
+}
+```
+
+### 특징 2: 웹 표준 API
+
+Edge Runtime은 브라우저와 동일한 API를 사용합니다:
+
+```javascript
+export const runtime = 'edge';
+
+export async function POST(request) {
+  // Request API (Web Standard)
+  const body = await request.json();
+
+  // Headers API (Web Standard)
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+
+  // Response API (Web Standard)
+  return new Response(JSON.stringify(body), {
+    headers,
+    status: 200
+  });
+}
+```
+
+### 특징 3: 스트리밍 지원
+
+```javascript
+export const runtime = 'edge';
+
+export async function GET() {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      // 데이터를 점진적으로 전송
+      controller.enqueue(encoder.encode('Hello '));
+      await sleep(1000);
+      controller.enqueue(encoder.encode('World'));
+      controller.close();
+    }
+  });
+
+  return new Response(stream);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+---
+
+## 실제 사용 사례
+
+### 사례 1: 인증 미들웨어
+
+Edge Runtime은 미들웨어에 최적화되어 있습니다:
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+// 자동으로 Edge Runtime에서 실행
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('auth-token');
+
+  // 빠른 인증 체크 (< 10ms)
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: '/dashboard/:path*'
+};
+```
+
+### 사례 2: A/B 테스팅
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // 사용자를 랜덤하게 그룹 배정
+  const bucket = Math.random() > 0.5 ? 'A' : 'B';
+
+  const response = NextResponse.next();
+
+  // 쿠키로 그룹 정보 저장
+  response.cookies.set('ab-test-bucket', bucket);
+
+  return response;
+}
+```
+
+### 사례 3: 지역별 리다이렉션
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // Vercel의 지역 정보 활용
+  const country = request.geo?.country || 'US';
+
+  // 한국 사용자는 한국어 페이지로
+  if (country === 'KR' && !request.nextUrl.pathname.startsWith('/ko')) {
+    return NextResponse.redirect(
+      new URL(`/ko${request.nextUrl.pathname}`, request.url)
+    );
+  }
+
+  return NextResponse.next();
+}
+```
+
+### 사례 4: API Routes (경량 API)
+
+```typescript
+// app/api/time/route.ts
+export const runtime = 'edge';
+
+export async function GET() {
+  return Response.json({
+    time: new Date().toISOString(),
+    edge: true
+  });
+}
+```
+
+### 사례 5: OpenGraph 이미지 동적 생성
+
+```typescript
+// app/api/og/route.tsx
+import { ImageResponse } from 'next/og';
+
+export const runtime = 'edge';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const title = searchParams.get('title');
+
+  return new ImageResponse(
+    (
+      <div style={{
+        fontSize: 128,
+        background: 'white',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        {title}
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630
+    }
+  );
+}
+```
+
+---
+
+## 장점과 한계
+
+### 장점
+
+- ✅ **빠른 응답 속도**: 콜드 스타트가 거의 없음 (< 10ms)
+- ✅ **전역 배포**: 사용자와 가까운 위치에서 실행
+- ✅ **낮은 비용**: 실행 시간이 짧아 비용 절감
+- ✅ **높은 동시성**: 많은 요청을 효율적으로 처리
+- ✅ **스트리밍 지원**: 데이터를 점진적으로 전송 가능
+
+### 한계
+
+- ⚠️ **제한된 런타임**: Node.js 고유 API 사용 불가
+  - 파일 시스템 접근 불가 (`fs` 모듈)
+  - Native 모듈 사용 불가
+  - 일부 npm 패키지 호환 안 됨
+
+- ⚠️ **실행 시간 제한**: 최대 25초 (Vercel Pro 기준)
+  - 무료 플랜: 10초
+  - Pro 플랜: 25초
+
+- ⚠️ **메모리 제한**: 최대 128MB
+  - 대용량 데이터 처리 제한적
+
+- ⚠️ **환경 변수 크기 제한**: 최대 4KB
+
+### 트레이드오프
+
+**Edge Runtime을 사용해야 하는 경우:**
+- 인증/권한 체크
+- 리다이렉션
+- A/B 테스팅
+- 간단한 데이터 변환
+- 헤더 수정
+- 지역별 라우팅
+- OpenGraph 이미지 생성
+
+**Node.js Runtime을 사용해야 하는 경우:**
+- 데이터베이스 직접 연결 (무거운 ORM)
+- 파일 시스템 접근
+- 복잡한 데이터 처리
+- 외부 라이브러리 다수 사용
+- 긴 실행 시간이 필요한 작업 (> 10초)
+
+---
+
+## 실전 사용 가이드
+
+### 1. Edge Runtime으로 마이그레이션
+
+**Before (Node.js Runtime):**
+```typescript
+// app/api/hello/route.ts
+import fs from 'fs';
+
+export async function GET() {
+  // ❌ fs 모듈 사용 - Edge Runtime에서 불가
+  const data = fs.readFileSync('./data.json', 'utf-8');
+  return Response.json({ data });
+}
+```
+
+**After (Edge Runtime):**
+```typescript
+// app/api/hello/route.ts
+export const runtime = 'edge';
+
+export async function GET() {
+  // ✅ 외부 API 호출로 대체
+  const response = await fetch('https://api.example.com/data');
+  const data = await response.json();
+  return Response.json({ data });
+}
+```
+
+### 2. 호환성 체크
+
+```typescript
+export const runtime = 'edge';
+
+export async function GET() {
+  // ✅ 사용 가능한 Web APIs
+  const url = new URL('https://example.com');
+  const headers = new Headers();
+  const response = await fetch('...');
+  const crypto = globalThis.crypto;
+
+  // ❌ 사용 불가
+  // const fs = require('fs'); // Node.js 모듈
+  // const path = require('path');
+
+  return Response.json({ ok: true });
+}
+```
+
+### 3. 환경 변수 사용
+
+```typescript
+// Edge Runtime에서 환경 변수
+export const runtime = 'edge';
+
+export async function GET() {
+  // ✅ process.env는 사용 가능
+  const apiKey = process.env.API_KEY;
+
+  const response = await fetch('https://api.example.com', {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`
+    }
+  });
+
+  return Response.json(await response.json());
+}
+```
+
+### 4. 에러 처리
+
+```typescript
+export const runtime = 'edge';
+
+export async function GET(request: Request) {
+  try {
+    const response = await fetch('https://api.example.com/data');
+
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return Response.json(data);
+
+  } catch (error) {
+    console.error('Edge Function 오류:', error);
+
+    return Response.json(
+      { error: '데이터를 가져오는데 실패했습니다' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+---
+
+## 런타임 선택 가이드
+
+### 의사결정 플로우차트
+
+```
+작업이 미들웨어인가?
+├─ Yes → Edge Runtime (필수)
+└─ No ↓
+
+응답 속도가 중요한가? (< 100ms)
+├─ Yes → Edge Runtime 고려
+└─ No ↓
+
+Node.js 고유 API가 필요한가?
+├─ Yes → Node.js Runtime
+└─ No ↓
+
+외부 API 호출만 있는가?
+├─ Yes → Edge Runtime
+└─ No ↓
+
+복잡한 계산이 필요한가? (> 10초)
+├─ Yes → Node.js Runtime
+└─ No → Edge Runtime
+```
+
+### 구체적인 예시
+
+| 작업 유형 | 권장 런타임 | 이유 |
+|---------|----------|-----|
+| 미들웨어 | Edge | 필수 사항 |
+| 인증 체크 | Edge | 빠른 응답 필요 |
+| 리다이렉션 | Edge | 빠른 응답 필요 |
+| A/B 테스팅 | Edge | 빠른 응답 필요 |
+| 간단한 API | Edge | 낮은 지연 시간 |
+| ORM 사용 | Node.js | Prisma 등 무거운 패키지 |
+| 파일 업로드 | Node.js | fs 모듈 필요 |
+| 이미지 처리 | Node.js | Sharp 등 Native 모듈 |
+| 복잡한 계산 | Node.js | 긴 실행 시간 |
+| PDF 생성 | Node.js | 무거운 라이브러리 |
+
+---
+
+## 관련 개념
+
+### Node.js Runtime과 비교
+
+| 특성 | Edge Runtime | Node.js Runtime |
+|-----|-------------|----------------|
+| 시작 시간 | < 10ms | 300-500ms |
+| 위치 | 전역 (300+ 노드) | 특정 리전 |
+| API | Web Standard | Node.js 전체 |
+| 패키지 | 제한적 | 제한 없음 |
+| 실행 시간 | 10-25초 | 10-300초 |
+| 메모리 | 128MB | 1024MB+ |
+| 사용 사례 | 경량 로직 | 복잡한 로직 |
+
+### Serverless Functions vs Edge Functions
+
+**Serverless Functions (Node.js Runtime):**
+- 복잡한 로직 처리
+- 데이터베이스 연결
+- 파일 처리
+- 무거운 계산
+
+**Edge Functions (Edge Runtime):**
+- 빠른 응답 필요
+- 전역 사용자 대응
+- 경량 로직
+- 미들웨어
+
+### Vercel Edge Network
+
+```
+[사용자] → [가장 가까운 Edge 노드] → [응답]
+                ↓
+    필요시 Origin 서버 접근
+```
+
+Vercel은 전 세계 300+ 위치에 Edge 노드를 운영하며, 사용자와 가장 가까운 노드에서 코드를 실행합니다.
+
+---
+
+## 더 알아보기
+
+### 공식 문서
+- [Next.js Edge Runtime](https://nextjs.org/docs/app/api-reference/edge)
+- [Vercel Edge Functions](https://vercel.com/docs/functions/edge-functions)
+- [Web Standards API](https://developer.mozilla.org/en-US/docs/Web/API)
+
+### 실습 가이드
+- [미들웨어 작성하기](https://nextjs.org/docs/app/building-your-application/routing/middleware)
+- [Edge API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers#edge-and-nodejs-runtimes)
+
+### 성능 최적화
+- [Edge Runtime 최적화 전략](https://vercel.com/docs/functions/edge-functions/edge-functions-api)
+- [런타임 비용 비교](https://vercel.com/docs/pricing)
+
+---
+
+## 자주 묻는 질문 (FAQ)
+
+### Q1: Edge Runtime에서 데이터베이스를 사용할 수 있나요?
+
+**A:** 직접 연결은 권장하지 않습니다. 하지만 HTTP 기반 데이터베이스는 가능합니다:
+
+```typescript
+export const runtime = 'edge';
+
+// ❌ 불가능
+// import { PrismaClient } from '@prisma/client';
+
+// ✅ 가능 (HTTP 기반)
+import { createClient } from '@supabase/supabase-js';
+
+export async function GET() {
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_KEY!
+  );
+
+  const { data } = await supabase.from('users').select('*');
+  return Response.json(data);
+}
+```
+
+### Q2: 기존 코드를 Edge Runtime으로 변환하려면?
+
+**A:** 3단계로 진행하세요:
+
+1. **런타임 선언 추가**
+```typescript
+export const runtime = 'edge';
+```
+
+2. **Node.js API 제거**
+```typescript
+// ❌ 제거
+import fs from 'fs';
+import path from 'path';
+
+// ✅ Web Standard API 사용
+const response = await fetch('...');
+```
+
+3. **테스트 및 검증**
+```bash
+npm run build
+# Edge Runtime 호환성 체크
+```
+
+### Q3: Edge Runtime과 Node.js Runtime을 같이 사용할 수 있나요?
+
+**A:** 네, 라우트별로 다르게 설정할 수 있습니다:
+
+```typescript
+// app/api/fast/route.ts
+export const runtime = 'edge'; // Edge Runtime
+
+export async function GET() {
+  return Response.json({ type: 'edge' });
+}
+```
+
+```typescript
+// app/api/heavy/route.ts
+// 런타임 명시 없음 = Node.js Runtime (기본값)
+
+import { PrismaClient } from '@prisma/client';
+
+export async function GET() {
+  const prisma = new PrismaClient();
+  // 복잡한 데이터베이스 쿼리
+}
+```
+
+### Q4: Edge Runtime의 성능은 실제로 얼마나 빠른가요?
+
+**A:** 실제 측정 결과:
+
+```
+콜드 스타트 (첫 요청):
+- Edge Runtime: 10-50ms
+- Node.js Runtime: 300-800ms
+
+후속 요청:
+- Edge Runtime: < 10ms
+- Node.js Runtime: 50-100ms
+
+지역별 응답 시간 (한국 사용자):
+- Edge Runtime (서울): 30-50ms
+- Node.js Runtime (버지니아): 250-350ms
+```
+
+---
+
+## 실전 체크리스트
+
+### Edge Runtime 적용 전 확인사항
+
+- [ ] Node.js 고유 API (`fs`, `path` 등) 사용하지 않는가?
+- [ ] 실행 시간이 10초 이내인가?
+- [ ] 메모리 사용량이 128MB 이내인가?
+- [ ] 사용하는 npm 패키지가 Web Standard API만 사용하는가?
+- [ ] 빠른 응답 속도가 중요한 작업인가?
+
+### 마이그레이션 체크리스트
+
+- [ ] `export const runtime = 'edge'` 추가
+- [ ] Node.js 모듈 제거 및 대체
+- [ ] 빌드 에러 확인 (`npm run build`)
+- [ ] 로컬 테스트 (`npm run dev`)
+- [ ] 프로덕션 배포 및 모니터링
+- [ ] 성능 측정 및 비교
+
+---
+
+## 마치며
+
+Edge Runtime은 Next.js의 강력한 기능으로, 올바르게 사용하면 애플리케이션의 성능을 크게 향상시킬 수 있습니다.
+
+**핵심 정리:**
+1. 빠른 응답이 필요한 경우 → Edge Runtime
+2. 복잡한 로직이 필요한 경우 → Node.js Runtime
+3. 미들웨어는 항상 → Edge Runtime
+
+처음에는 미들웨어와 간단한 API Routes부터 Edge Runtime을 적용해보고, 점진적으로 확대하는 것을 권장합니다.
+
+**다음 단계:**
+- 실제 프로젝트에 미들웨어 작성해보기
+- 성능 모니터링 도구로 측정하기
+- 팀과 런타임 선택 기준 정의하기
