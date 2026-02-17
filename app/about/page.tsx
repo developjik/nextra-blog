@@ -173,6 +173,24 @@ export default function AboutPage() {
           </div>
 
           <div>
+            <h2 className="text-3xl font-bold mb-6">최근 발행 글 (이직 포트폴리오)</h2>
+            <div className="space-y-4">
+              <a href="/posts/cloudfront-hidden-power-without-cache" className="block p-5 rounded-lg border bg-card hover:bg-accent transition-colors">
+                <h3 className="font-semibold mb-2">CloudFront의 숨은 힘: 캐싱 없이도 좋아지는 프론트엔드 성능</h3>
+                <p className="text-sm text-muted-foreground">CDN/전송 계층 관점에서 성능·비용 최적화를 설명한 글</p>
+              </a>
+              <a href="/posts/remove-branching-improve-testability" className="block p-5 rounded-lg border bg-card hover:bg-accent transition-colors">
+                <h3 className="font-semibold mb-2">문을 없애고 테스트하기: 프론트엔드 코드 품질을 올리는 리팩터링 관점</h3>
+                <p className="text-sm text-muted-foreground">분기 축소와 책임 분리로 테스트 가능성을 높이는 실전 접근</p>
+              </a>
+              <a href="/posts/types-boundary-over-enum" className="block p-5 rounded-lg border bg-card hover:bg-accent transition-colors">
+                <h3 className="font-semibold mb-2">좋은 타입은 선언 수가 아니라 경계에서 나온다: enum 남용에서 벗어나기</h3>
+                <p className="text-sm text-muted-foreground">API/도메인/UI 경계 분리를 중심으로 타입 설계를 정리한 글</p>
+              </a>
+            </div>
+          </div>
+
+          <div>
             <h2 className="text-3xl font-bold mb-6">연락하기</h2>
             <div className="p-6 rounded-lg border bg-card">
               <p className="text-lg text-muted-foreground mb-6">

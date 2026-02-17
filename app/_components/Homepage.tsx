@@ -25,16 +25,16 @@ const featuredProjects = [
 
 const featuredPosts = [
   {
-    title: 'Next.js Server vs Client Components',
-    href: '/posts/nextjs-server-vs-client-components',
+    title: 'CloudFront의 숨은 힘: 캐싱 없이도 좋아지는 프론트엔드 성능',
+    href: '/posts/cloudfront-hidden-power-without-cache',
   },
   {
-    title: 'React Concurrent Rendering',
-    href: '/posts/react-concurrent-rendering',
+    title: '문을 없애고 테스트하기: 프론트엔드 코드 품질을 올리는 리팩터링 관점',
+    href: '/posts/remove-branching-improve-testability',
   },
   {
-    title: 'JavaScript 비동기 처리 완벽 가이드',
-    href: '/posts/javascript-async-processing-complete-guide',
+    title: '좋은 타입은 선언 수가 아니라 경계에서 나온다: enum 남용에서 벗어나기',
+    href: '/posts/types-boundary-over-enum',
   },
 ]
 
