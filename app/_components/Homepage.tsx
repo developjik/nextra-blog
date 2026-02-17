@@ -1,297 +1,133 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { PostCardSkeleton, ScrollReveal } from './index'
+import { ScrollReveal } from './index'
+
+const featuredProjects = [
+  {
+    title: 'Nextra Blog 리빌드',
+    summary: 'Next.js App Router + Nextra 기반 기술 블로그 구축 및 콘텐츠 운영 자동화',
+    href: '/about',
+    tags: ['Next.js', 'Nextra', 'TypeScript'],
+  },
+  {
+    title: 'React 성능 최적화 사례 정리',
+    summary: '렌더링 병목 분석부터 개선까지 실전 관점으로 기록한 아티클 모음',
+    href: '/tags',
+    tags: ['React', 'Performance', 'DX'],
+  },
+  {
+    title: '프론트엔드 학습 아카이브',
+    summary: 'JavaScript/Next.js/아키텍처 학습 내용을 구조적으로 문서화',
+    href: '/archives',
+    tags: ['JavaScript', 'Next.js', 'Architecture'],
+  },
+]
+
+const featuredPosts = [
+  {
+    title: 'Next.js Server vs Client Components',
+    href: '/posts/nextjs-server-vs-client-components',
+  },
+  {
+    title: 'React Concurrent Rendering',
+    href: '/posts/react-concurrent-rendering',
+  },
+  {
+    title: 'JavaScript 비동기 처리 완벽 가이드',
+    href: '/posts/javascript-async-processing-complete-guide',
+  },
+]
 
 export function Homepage() {
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 1000)
-  }, [])
-
   return (
     <div className="relative min-h-screen">
       <section className="section-swiss">
         <div className="grid-swiss">
           <div className="col-span-12 text-center">
-            <div className="space-swiss-sm">
-              <ScrollReveal variant="up">
-                <div className="text-meta mb-4">01</div>
-              </ScrollReveal>
-              <ScrollReveal variant="up" delay={100}>
-                <h1 className="text-hero mb-6">
-                  DEVELOPPIK'S
-                  <br />
-                  <span style={{ color: 'var(--color-accent)' }}>DEV BLOG</span>
-                </h1>
-              </ScrollReveal>
-              <ScrollReveal variant="up" delay={200}>
-                <div className="divider-swiss m-swiss-auto" />
-              </ScrollReveal>
-              <ScrollReveal variant="up" delay={300}>
-                <div
-                  className="text-body mt-6"
-                  style={{
-                    color: 'var(--color-text-secondary)',
-                    maxWidth: '600px',
-                    marginInline: 'auto',
-                  }}
-                >
-                  웹 개발에 대한 경험과 학습을 기록하고 공유하는 공간입니다.
-                </div>
-              </ScrollReveal>
-            </div>
+            <ScrollReveal variant="up">
+              <div className="text-meta mb-4">FRONTEND ENGINEER</div>
+              <h1 className="text-hero mb-6">
+                DEVELOPJIK
+                <br />
+                <span style={{ color: 'var(--color-accent)' }}>PORTFOLIO BLOG</span>
+              </h1>
+              <div className="divider-swiss m-swiss-auto" />
+              <p
+                className="text-body mt-6"
+                style={{ color: 'var(--color-text-secondary)', maxWidth: '720px', marginInline: 'auto' }}
+              >
+                사용자 경험과 성능 최적화를 중요하게 생각하는 프론트엔드 개발자입니다.
+                이 블로그는 이직을 위한 대표 프로젝트, 문제 해결 기록, 기술 아티클을 한 번에 볼 수 있는 공간입니다.
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal variant="up" delay={100}>
+              <div className="flex flex-wrap justify-center gap-4 mt-10">
+                <a href="/about" className="btn-swiss">ABOUT ME</a>
+                <a href="/archives" className="btn-swiss btn-swiss-outline">TECH POSTS</a>
+                <a href="https://github.com/developjik" target="_blank" rel="noopener noreferrer" className="btn-swiss btn-swiss-outline">GITHUB</a>
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
-      <section
-        className="section-swiss"
-        style={{ backgroundColor: 'var(--swiss-light-gray)' }}
-      >
+      <section className="section-swiss" style={{ backgroundColor: 'var(--swiss-light-gray)' }}>
         <div className="grid-swiss">
           <div className="col-span-12 mb-12">
-            <ScrollReveal variant="up">
-              <div className="text-meta mb-2">02</div>
-              <h2 className="text-h2">LATEST POSTS</h2>
-              <div className="divider-swiss" />
-            </ScrollReveal>
+            <div className="text-meta mb-2">01</div>
+            <h2 className="text-h2">FEATURED PROJECTS</h2>
+            <div className="divider-swiss" />
           </div>
 
-          {loading ? (
-            <>
-              <div className="col-span-12 md:col-span-4 mb-8">
-                <PostCardSkeleton />
-              </div>
-              <div className="col-span-12 md:col-span-4 mb-8">
-                <PostCardSkeleton />
-              </div>
-              <div className="col-span-12 md:col-span-4 mb-8">
-                <PostCardSkeleton />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="col-span-12 md:col-span-4 mb-8">
-                <ScrollReveal variant="up" delay={100}>
-                  <a href="/posts/welcome" className="block card-swiss group">
-                    <div className="number-swiss mb-4">01</div>
-                    <h3 className="text-h3 mb-4 group-hover:text-[var(--color-accent)] transition-colors">
-                      WELCOME
-                    </h3>
-                    <div
-                      className="text-body mb-4"
-                      style={{ color: 'var(--color-text-secondary)' }}
-                    >
-                      개발 블로그를 시작하며 안녕하세요!
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="tag-swiss">INTRO</span>
-                      <span className="tag-swiss">BLOG</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-meta">
-                      <span>2025.11.18</span>
-                      <span style={{ color: 'var(--color-text-meta)' }}>→</span>
-                    </div>
-                  </a>
-                </ScrollReveal>
-              </div>
-
-              <div className="col-span-12 md:col-span-4 mb-8">
-                <ScrollReveal variant="up" delay={200}>
-                  <a
-                    href="/posts/javascript-async-processing-complete-guide"
-                    className="block card-swiss group"
-                  >
-                    <div className="number-swiss mb-4">02</div>
-                    <h3 className="text-h3 mb-4 group-hover:text-[var(--color-accent)] transition-colors">
-                      JAVASCRIPT ASYNC
-                    </h3>
-                    <div
-                      className="text-body mb-4"
-                      style={{ color: 'var(--color-text-secondary)' }}
-                    >
-                      비동기 처리 완벽 가이드
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="tag-swiss">JAVASCRIPT</span>
-                      <span className="tag-swiss">ASYNC</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-meta">
-                      <span>READ MORE</span>
-                      <span style={{ color: 'var(--color-text-meta)' }}>→</span>
-                    </div>
-                  </a>
-                </ScrollReveal>
-              </div>
-
-              <div className="col-span-12 md:col-span-4 mb-8">
-                <ScrollReveal variant="up" delay={300}>
-                  <a
-                    href="/posts/javascript-this-complete-guide"
-                    className="block card-swiss group"
-                  >
-                    <div className="number-swiss mb-4">03</div>
-                    <h3 className="text-h3 mb-4 group-hover:text-[var(--color-accent)] transition-colors">
-                      THIS COMPLETE GUIDE
-                    </h3>
-                    <div
-                      className="text-body mb-4"
-                      style={{ color: 'var(--color-text-secondary)' }}
-                    >
-                      JavaScript this 완벽 이해
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="tag-swiss">JAVASCRIPT</span>
-                      <span className="tag-swiss">THIS</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-meta">
-                      <span>READ MORE</span>
-                      <span style={{ color: 'var(--color-text-meta)' }}>→</span>
-                    </div>
-                  </a>
-                </ScrollReveal>
-              </div>
-            </>
-          )}
-
-          <div className="col-span-12 text-center mt-8">
-            <ScrollReveal variant="up" delay={400}>
-              <a href="/archives" className="btn-swiss btn-swiss-outline">
-                VIEW ALL POSTS
+          {featuredProjects.map((project, idx) => (
+            <div key={project.title} className="col-span-12 md:col-span-4 mb-8">
+              <a href={project.href} className="block card-swiss group h-full">
+                <div className="number-swiss mb-4">0{idx + 1}</div>
+                <h3 className="text-h3 mb-4 group-hover:text-[var(--color-accent)] transition-colors">{project.title}</h3>
+                <p className="text-body mb-4" style={{ color: 'var(--color-text-secondary)' }}>
+                  {project.summary}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {project.tags.map((tag) => (
+                    <span key={tag} className="tag-swiss">{tag}</span>
+                  ))}
+                </div>
               </a>
-            </ScrollReveal>
-          </div>
+            </div>
+          ))}
         </div>
       </section>
 
       <section className="section-swiss">
         <div className="grid-swiss">
-          <div className="col-span-12 md:col-span-6">
-            <ScrollReveal variant="up">
-              <div className="text-meta mb-2">03</div>
-              <h2 className="text-h2 mb-6">ABOUT THIS BLOG</h2>
-              <div className="divider-swiss mb-6" />
-              <div
-                className="text-body mb-4"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                이 블로그는 제가 개발하면서 배우고 경험한 것들을 기록하고
-                공유하기 위해 만들었습니다.
-              </div>
-              <div
-                className="text-body"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                JavaScript, React, Next.js, TypeScript 등 현대 웹 개발 기술에
-                대한 실용적인 팁과 경험을 공유합니다.
-              </div>
-            </ScrollReveal>
+          <div className="col-span-12 mb-10">
+            <div className="text-meta mb-2">02</div>
+            <h2 className="text-h2">INTERVIEW QUICK LINKS</h2>
+            <div className="divider-swiss" />
           </div>
 
-          <div className="col-span-12 md:col-span-6">
-            <ScrollReveal variant="up" delay={100}>
-              <div className="text-meta mb-2">04</div>
-              <h2 className="text-h2 mb-6">TECH STACK</h2>
-              <div className="divider-swiss mb-6" />
+          <div className="col-span-12 md:col-span-8">
+            <div className="space-y-4">
+              {featuredPosts.map((post) => (
+                <a key={post.href} href={post.href} className="block card-swiss group">
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-h3 group-hover:text-[var(--color-accent)] transition-colors">{post.title}</h3>
+                    <span className="text-meta">→</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
 
+          <div className="col-span-12 md:col-span-4">
+            <div className="card-swiss">
+              <div className="text-meta mb-3">CONTACT</div>
               <div className="space-y-3">
-                <div>
-                  <div className="text-meta mb-2">FRONTEND</div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="tag-swiss">React</span>
-                    <span className="tag-swiss">Next.js</span>
-                    <span className="tag-swiss">TypeScript</span>
-                    <span className="tag-swiss">Tailwind CSS</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-meta mb-2">BACKEND</div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="tag-swiss">Node.js</span>
-                    <span className="tag-swiss">Express</span>
-                    <span className="tag-swiss">PostgreSQL</span>
-                    <span className="tag-swiss">MongoDB</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-meta mb-2">TOOLS</div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="tag-swiss">Git</span>
-                    <span className="tag-swiss">Docker</span>
-                    <span className="tag-swiss">Vercel</span>
-                    <span className="tag-swiss">AWS</span>
-                  </div>
-                </div>
+                <a href="mailto:developjik@gmail.com" className="btn-swiss btn-swiss-outline w-full">EMAIL</a>
+                <a href="/about" className="btn-swiss btn-swiss-outline w-full">CAREER SUMMARY</a>
               </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="section-swiss"
-        style={{ borderTop: '1px solid var(--color-border)' }}
-      >
-        <div className="grid-swiss">
-          <div className="col-span-12 text-center">
-            <ScrollReveal variant="up">
-              <div className="text-meta mb-2">05</div>
-              <h2 className="text-h2 mb-6">LET'S CONNECT</h2>
-              <div className="divider-swiss m-swiss-auto" />
-              <div
-                className="text-body mt-6"
-                style={{ maxWidth: '500px', marginInline: 'auto' }}
-              >
-                궁금한 점이 있으시거나 피드백을 남기고 싶으시면 언제든지
-                연락주세요!
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-4 mt-12">
-                <a
-                  href="https://github.com/developjik"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-swiss"
-                >
-                  GITHUB
-                </a>
-                <a
-                  href="mailto:developjik@gmail.com"
-                  className="btn-swiss btn-swiss-outline"
-                >
-                  EMAIL
-                </a>
-                <a href="/feed.xml" className="btn-swiss btn-swiss-outline">
-                  RSS FEED
-                </a>
-              </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="section-swiss-compact"
-        style={{ borderTop: '1px solid var(--color-border)' }}
-      >
-        <div className="grid-swiss">
-          <div className="col-span-12 text-center">
-            <ScrollReveal variant="scale">
-              <div
-                className="card-swiss"
-                style={{ backgroundColor: 'var(--color-bg)' }}
-              >
-                <div className="flex items-center justify-center gap-4 text-meta">
-                  <span>PRESS</span>
-                  <kbd className="kbd-swiss">K</kbd>
-                  <span>TO SEARCH THE BLOG</span>
-                </div>
-              </div>
-            </ScrollReveal>
+            </div>
           </div>
         </div>
       </section>

@@ -11,7 +11,7 @@ export default function AboutPage() {
               About Me
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              안녕하세요! 웹 개발에 열정을 가진 개발자 developjik입니다.
+              안녕하세요! 사용자 경험과 성능 최적화를 중요하게 생각하는 프론트엔드 개발자 developjik입니다.
             </p>
           </div>
         </div>
@@ -28,6 +28,16 @@ export default function AboutPage() {
               애플리케이션 개발에 집중하고 있습니다. 새로운 기술을 배우는 것을
               즐기며, 배운 내용을 블로그에 정리하고 공유하는 것을 좋아합니다.
             </p>
+          </div>
+
+          <div className="p-6 rounded-lg border bg-card">
+            <h2 className="text-3xl font-bold mb-6">이직 포인트 요약</h2>
+            <ul className="space-y-3 text-muted-foreground">
+              <li>• React/Next.js/TypeScript 중심의 프론트엔드 실무 역량</li>
+              <li>• 성능 최적화, 접근성, 유지보수성을 고려한 설계 경험</li>
+              <li>• 기술 학습 내용을 문서화하여 팀/커뮤니티와 공유하는 습관</li>
+              <li>• 문제 정의 → 해결 → 회고의 흐름으로 프로젝트를 개선하는 방식</li>
+            </ul>
           </div>
 
           <div>
