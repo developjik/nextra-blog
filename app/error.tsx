@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import type { FallbackProps } from 'react-error-boundary'
 
 /**
  * 글로벌 에러 바운더리 컴포넌트
@@ -10,10 +9,12 @@ import type { FallbackProps } from 'react-error-boundary'
  *
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling
  */
-export default function GlobalError({
-  error,
-  resetErrorBoundary,
-}: FallbackProps) {
+type GlobalErrorProps = {
+  error: Error & { digest?: string }
+  reset: () => void
+}
+
+export default function GlobalError({ error, reset }: GlobalErrorProps) {
   useEffect(() => {
     // 에러 로깅 서비스로 전송 (선택사항)
     console.error('Unhandled error:', error)
@@ -33,7 +34,7 @@ export default function GlobalError({
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <button
                 type="button"
-                onClick={resetErrorBoundary}
+                onClick={reset}
                 className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
               >
                 다시 시도

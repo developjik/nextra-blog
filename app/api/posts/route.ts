@@ -1,6 +1,6 @@
+import { readFileSync } from 'fs'
 import { glob } from 'glob'
 import matter from 'gray-matter'
-import { readFileSync } from 'fs'
 import { NextResponse } from 'next/server'
 
 interface Post {
