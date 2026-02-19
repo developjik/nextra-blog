@@ -1,14 +1,5 @@
-import { readFileSync } from 'fs'
-import { glob } from 'glob'
-import matter from 'gray-matter'
+import { getAllPosts } from '~/app/lib/posts'
 import { env } from '~/env'
-
-interface Metadata {
-  title: string
-  description: string
-  date?: string
-  tags?: string[]
-}
 
 interface SitemapEntry {
   url: string
@@ -22,33 +13,6 @@ interface SitemapEntry {
     | 'yearly'
     | 'never'
   priority?: number
-}
-
-/**
- * MDX 파일에서 메타데이터를 추출하는 함수
- */
-async function getPostMetadata(): Promise<
-  Array<{ slug: string; metadata: Metadata }>
-> {
-  const postPaths = await glob('**/page.mdx', {
-    cwd: `${process.cwd()}/app/posts`,
-  })
-
-  const posts = postPaths.map((path) => {
-    const fullPath = `${process.cwd()}/app/posts/${path}`
-    const fileContents = readFileSync(fullPath, 'utf8')
-    const { data } = matter(fileContents)
-
-    // 슬러그 추출: directory-name/page.mdx -> directory-name
-    const slug = path.replace(/\/page\.mdx$/, '')
-
-    return {
-      slug,
-      metadata: data as Metadata,
-    }
-  })
-
-  return posts
 }
 
 /**
@@ -80,10 +44,10 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
   ]
 
   // 블로그 포스트 목록
-  const posts = await getPostMetadata()
-  const postPages: SitemapEntry[] = posts.map(({ slug, metadata }) => ({
-    url: `${baseUrl}/posts/${slug}`,
-    lastModified: metadata.date ? new Date(metadata.date) : new Date(),
+  const posts = await getAllPosts()
+  const postPages: SitemapEntry[] = posts.map((post) => ({
+    url: `${baseUrl}/posts/${post.slug}`,
+    lastModified: post.date ? new Date(post.date) : new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }))

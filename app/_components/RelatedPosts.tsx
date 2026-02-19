@@ -1,3 +1,9 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+
 interface Post {
   title: string
   description: string
@@ -5,33 +11,61 @@ interface Post {
   tags: readonly string[]
 }
 
-interface RelatedPostsProps {
-  currentPostTags: readonly string[]
-  allPosts: Post[]
-  currentPostSlug: string
-}
+export function RelatedPosts() {
+  const pathname = usePathname()
+  const [allPosts, setAllPosts] = useState<Post[]>([])
 
-export function RelatedPosts({
-  currentPostTags,
-  allPosts,
-  currentPostSlug,
-}: RelatedPostsProps) {
-  const relatedPosts = allPosts
-    .filter((post) => post.slug !== currentPostSlug)
-    .map((post) => ({
-      ...post,
-      relatedScore: post.tags.filter((tag) => currentPostTags.includes(tag))
-        .length,
-    }))
-    .filter((post) => post.relatedScore > 0)
-    .sort((a, b) => b.relatedScore - a.relatedScore)
-    .slice(0, 3)
+  useEffect(() => {
+    async function loadPosts() {
+      try {
+        const response = await fetch('/api/posts')
+        if (!response.ok) {
+          return
+        }
+        const data = (await response.json()) as Post[]
+        setAllPosts(data)
+      } catch {
+        // 관련 포스트는 보조 기능이므로 실패 시 조용히 무시
+      }
+    }
 
-  const fallbackPosts = allPosts
-    .filter((post) => post.slug !== currentPostSlug)
-    .slice(0, 3)
+    loadPosts()
+  }, [])
 
-  const postsToShow = relatedPosts.length >= 3 ? relatedPosts : fallbackPosts
+  const currentPostSlug = useMemo(() => {
+    const parts = pathname.split('/').filter(Boolean)
+    if (parts[0] !== 'posts' || !parts[1]) {
+      return ''
+    }
+    return parts[1]
+  }, [pathname])
+
+  const currentPostTags = useMemo(() => {
+    return allPosts.find((post) => post.slug === currentPostSlug)?.tags ?? []
+  }, [allPosts, currentPostSlug])
+
+  const postsToShow = useMemo(() => {
+    if (!currentPostSlug || allPosts.length === 0) {
+      return []
+    }
+
+    const relatedPosts = allPosts
+      .filter((post) => post.slug !== currentPostSlug)
+      .map((post) => ({
+        ...post,
+        relatedScore: post.tags.filter((tag) => currentPostTags.includes(tag))
+          .length,
+      }))
+      .filter((post) => post.relatedScore > 0)
+      .sort((a, b) => b.relatedScore - a.relatedScore)
+      .slice(0, 3)
+
+    if (relatedPosts.length >= 3) {
+      return relatedPosts
+    }
+
+    return allPosts.filter((post) => post.slug !== currentPostSlug).slice(0, 3)
+  }, [allPosts, currentPostSlug, currentPostTags])
 
   if (postsToShow.length === 0) {
     return null
@@ -51,7 +85,7 @@ export function RelatedPosts({
 
         {postsToShow.map((post, index) => (
           <div key={post.slug} className="col-span-12 md:col-span-4 mb-8">
-            <a href={`/posts/${post.slug}`} className="block card-swiss group">
+            <Link href={`/posts/${post.slug}`} className="block card-swiss group">
               <div className="number-swiss mb-4">0{index + 1}</div>
               <h3 className="text-h3 mb-4 group-hover:text-[var(--color-accent)] transition-colors">
                 {post.title}
@@ -73,7 +107,7 @@ export function RelatedPosts({
                 <span>READ MORE</span>
                 <span style={{ color: 'var(--color-text-meta)' }}>→</span>
               </div>
-            </a>
+            </Link>
           </div>
         ))}
       </div>
