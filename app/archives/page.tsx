@@ -19,6 +19,15 @@ function formatDate(dateString: string): string {
   return `${year}.${month}.${day}`
 }
 
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[-_./]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
@@ -287,16 +296,20 @@ export default function PostsPage() {
   }, [allPosts])
 
   const filteredPosts = useMemo(() => {
+    const normalizedQuery = normalizeSearchText(debouncedSearchQuery)
+
     return allPosts.filter((post) => {
+      const searchableText = [
+        post.title,
+        post.description,
+        post.slug,
+        ...post.tags,
+      ]
+        .map(normalizeSearchText)
+        .join(' ')
+
       const matchesSearch =
-        debouncedSearchQuery === '' ||
-        post.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        post.description
-          .toLowerCase()
-          .includes(debouncedSearchQuery.toLowerCase()) ||
-        post.tags.some((tag) =>
-          tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-        )
+        normalizedQuery === '' || searchableText.includes(normalizedQuery)
 
       const matchesTags =
         selectedTags.length === 0 ||
