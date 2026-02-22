@@ -123,10 +123,11 @@ function SearchInput({
   return (
     <div className="relative mb-8">
       <input
-        type="text"
+        type="search"
         placeholder="검색어 입력..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        autoComplete="off"
         className="w-full px-6 py-6 border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-[var(--font-mono)] text-xl uppercase tracking-wider focus:outline-none focus:border-[var(--color-accent)] transition-colors duration-200 placeholder:text-[var(--color-text-meta)]"
         aria-label="포스트 검색"
       />
@@ -268,15 +269,22 @@ export default function PostsPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
   useEffect(() => {
+    const controller = new AbortController()
+
     async function loadPosts() {
       try {
-        const response = await fetch('/api/posts')
+        const response = await fetch('/api/posts', {
+          signal: controller.signal,
+        })
         if (!response.ok) {
           throw new Error('Failed to load posts')
         }
         const data = (await response.json()) as Post[]
         setAllPosts(data)
       } catch (err) {
+        if ((err as Error).name === 'AbortError') {
+          return
+        }
         console.error('Error loading posts:', err)
         setError('포스트를 불러오는데 실패했습니다.')
       } finally {
@@ -285,14 +293,23 @@ export default function PostsPage() {
     }
 
     loadPosts()
+
+    return () => {
+      controller.abort()
+    }
   }, [])
 
   const allTags = useMemo(() => {
-    const tagSet = new Set<string>()
+    const tagCount = new Map<string, number>()
     allPosts.forEach((post) => {
-      post.tags.forEach((tag) => tagSet.add(tag))
+      post.tags.forEach((tag) => {
+        tagCount.set(tag, (tagCount.get(tag) ?? 0) + 1)
+      })
     })
-    return Array.from(tagSet).sort((a, b) => a.localeCompare(b, 'ko'))
+
+    return [...tagCount.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'))
+      .map(([tag]) => tag)
   }, [allPosts])
 
   const filteredPosts = useMemo(() => {
@@ -340,6 +357,7 @@ export default function PostsPage() {
             <p
               className="text-body"
               style={{ color: 'var(--color-text-secondary)' }}
+              aria-live="polite"
             >
               {filteredPosts.length}개 중 {allPosts.length}개 표시됨
             </p>
