@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 
 interface Post {
   title: string
@@ -259,7 +260,11 @@ function PostCardSkeleton() {
   )
 }
 
-export default function PostsPage() {
+function PostsPageContent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [allPosts, setAllPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -267,6 +272,17 @@ export default function PostsPage() {
   const [selectedTags, setSelectedTags] = useState<readonly string[]>([])
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+  useEffect(() => {
+    const query = searchParams.get('q') ?? ''
+    const tags = (searchParams.get('tags') ?? '')
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+
+    setSearchQuery(query)
+    setSelectedTags(tags)
+  }, [searchParams])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -311,6 +327,38 @@ export default function PostsPage() {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'))
       .map(([tag]) => tag)
   }, [allPosts])
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (debouncedSearchQuery.trim() === '') {
+      params.delete('q')
+    } else {
+      params.set('q', debouncedSearchQuery.trim())
+    }
+
+    const validTags = selectedTags.filter((tag) => allTags.includes(tag))
+    if (validTags.length === 0) {
+      params.delete('tags')
+    } else {
+      params.set('tags', validTags.join(','))
+    }
+
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery === '' ? pathname : `${pathname}?${nextQuery}`, {
+        scroll: false,
+      })
+    }
+  }, [
+    debouncedSearchQuery,
+    selectedTags,
+    allTags,
+    router,
+    pathname,
+    searchParams,
+  ])
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = normalizeSearchText(debouncedSearchQuery)
@@ -411,5 +459,13 @@ export default function PostsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function PostsPage() {
+  return (
+    <Suspense fallback={null}>
+      <PostsPageContent />
+    </Suspense>
   )
 }
