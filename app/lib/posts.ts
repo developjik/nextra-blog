@@ -3,6 +3,7 @@ import 'server-only'
 import { readFileSync } from 'fs'
 import { glob } from 'glob'
 import matter from 'gray-matter'
+import { cache } from 'react'
 
 export interface PostMeta {
   title: string
@@ -10,6 +11,12 @@ export interface PostMeta {
   slug: string
   tags: readonly string[]
   date: string
+}
+
+type ParsedPost = {
+  meta: PostMeta
+  sourceFile: string
+  body: string
 }
 
 function toStringOrEmpty(value: unknown): string {
@@ -64,13 +71,29 @@ function toSafePostMeta(raw: PostMeta, sourceFile: string): PostMeta {
   }
 }
 
-export async function getAllPosts(): Promise<PostMeta[]> {
+function validatePostLinks(posts: readonly ParsedPost[]) {
+  const slugSet = new Set(posts.map((post) => post.meta.slug))
+  const mdxPostLinkPattern = /\[[^\]]+\]\(\/posts\/([a-zA-Z0-9-]+)(?:[#?][^)]*)?\)/g
+
+  for (const post of posts) {
+    for (const match of post.body.matchAll(mdxPostLinkPattern)) {
+      const linkedSlug = match[1]
+      if (!slugSet.has(linkedSlug)) {
+        throw new Error(
+          `[posts] 깨진 내부 링크: ${post.sourceFile} -> /posts/${linkedSlug}`
+        )
+      }
+    }
+  }
+}
+
+const loadAllPosts = async (): Promise<PostMeta[]> => {
   const files = await glob('**/page.mdx', { cwd: 'app/posts' })
 
-  const posts = files.map((file) => {
+  const parsedPosts = files.map((file) => {
     const filePath = `app/posts/${file}`
     const fileContent = readFileSync(filePath, 'utf-8')
-    const { data } = matter(fileContent)
+    const { data, content } = matter(fileContent)
 
     const slug = file.replace('/page.mdx', '')
     if (slug === '') {
@@ -85,20 +108,30 @@ export async function getAllPosts(): Promise<PostMeta[]> {
       date: toStringOrEmpty(data.date),
     } satisfies PostMeta
 
-    return toSafePostMeta(post, filePath)
+    return {
+      meta: toSafePostMeta(post, filePath),
+      sourceFile: filePath,
+      body: content,
+    } satisfies ParsedPost
   })
 
   const slugSet = new Set<string>()
-  for (const post of posts) {
-    if (slugSet.has(post.slug)) {
-      throw new Error(`[posts] slug 중복: ${post.slug}`)
+  for (const post of parsedPosts) {
+    if (slugSet.has(post.meta.slug)) {
+      throw new Error(`[posts] slug 중복: ${post.meta.slug}`)
     }
-    slugSet.add(post.slug)
+    slugSet.add(post.meta.slug)
   }
 
-  return posts.sort((a, b) => {
-    const dateA = new Date(a.date).getTime()
-    const dateB = new Date(b.date).getTime()
-    return dateB - dateA
-  })
+  validatePostLinks(parsedPosts)
+
+  return parsedPosts
+    .map((post) => post.meta)
+    .sort((a, b) => {
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      return dateB - dateA
+    })
 }
+
+export const getAllPosts = cache(loadAllPosts)
