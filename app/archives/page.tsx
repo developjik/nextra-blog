@@ -29,6 +29,10 @@ function normalizeSearchText(value: string): string {
     .trim()
 }
 
+function compactSearchText(value: string): string {
+  return normalizeSearchText(value).replace(/\s+/g, '')
+}
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
@@ -362,6 +366,7 @@ function PostsPageContent() {
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = normalizeSearchText(debouncedSearchQuery)
+    const compactQuery = compactSearchText(debouncedSearchQuery)
 
     return allPosts.filter((post) => {
       const searchableText = [
@@ -373,8 +378,12 @@ function PostsPageContent() {
         .map(normalizeSearchText)
         .join(' ')
 
+      const compactSearchableText = compactSearchText(searchableText)
+
       const matchesSearch =
-        normalizedQuery === '' || searchableText.includes(normalizedQuery)
+        normalizedQuery === '' ||
+        searchableText.includes(normalizedQuery) ||
+        (compactQuery !== '' && compactSearchableText.includes(compactQuery))
 
       const matchesTags =
         selectedTags.length === 0 ||
