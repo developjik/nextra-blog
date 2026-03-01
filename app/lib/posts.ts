@@ -19,6 +19,14 @@ type ParsedPost = {
   body: string
 }
 
+type JsonLdMeta = {
+  title?: string
+  description?: string
+  slug?: string
+  date?: string
+  tags?: readonly string[]
+}
+
 function toStringOrEmpty(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
@@ -71,6 +79,81 @@ function toSafePostMeta(raw: PostMeta, sourceFile: string): PostMeta {
   }
 }
 
+function extractJsonLdMeta(body: string): JsonLdMeta | null {
+  const jsonLdMetadataPattern =
+    /<JsonLd[\s\S]*?metadata=\{\{([\s\S]*?)\}\}[\s\S]*?\/>/
+  const metadataMatch = body.match(jsonLdMetadataPattern)
+
+  if (!metadataMatch) {
+    return null
+  }
+
+  const metadataObject = metadataMatch[1]
+
+  const extractStringField = (field: string): string | undefined => {
+    const pattern = new RegExp(`${field}\\s*:\\s*['"]([^'"]+)['"]`)
+    return metadataObject.match(pattern)?.[1]?.trim()
+  }
+
+  const tagsMatch = metadataObject.match(/tags\s*:\s*\[([^\]]*)\]/)
+  const tags = tagsMatch
+    ? tagsMatch[1]
+        .split(',')
+        .map((rawTag) => rawTag.replace(/['"]/g, '').trim())
+        .filter((tag) => tag !== '')
+    : undefined
+
+  return {
+    title: extractStringField('title'),
+    description: extractStringField('description'),
+    slug: extractStringField('slug'),
+    date: extractStringField('date'),
+    tags,
+  }
+}
+
+function validatePostMetadataConsistency(posts: readonly ParsedPost[]) {
+  for (const post of posts) {
+    const jsonLdMeta = extractJsonLdMeta(post.body)
+
+    if (!jsonLdMeta) {
+      continue
+    }
+
+    const mismatches: string[] = []
+
+    if (jsonLdMeta.slug && jsonLdMeta.slug !== post.meta.slug) {
+      mismatches.push(`slug(${jsonLdMeta.slug} !== ${post.meta.slug})`)
+    }
+
+    if (jsonLdMeta.title && jsonLdMeta.title !== post.meta.title) {
+      mismatches.push('title')
+    }
+
+    if (jsonLdMeta.description && jsonLdMeta.description !== post.meta.description) {
+      mismatches.push('description')
+    }
+
+    if (jsonLdMeta.date && jsonLdMeta.date !== post.meta.date) {
+      mismatches.push('date')
+    }
+
+    if (jsonLdMeta.tags) {
+      const normalizedJsonLdTags = [...jsonLdMeta.tags].sort()
+      const normalizedMetaTags = [...post.meta.tags].sort()
+      if (normalizedJsonLdTags.join('|') !== normalizedMetaTags.join('|')) {
+        mismatches.push('tags')
+      }
+    }
+
+    if (mismatches.length > 0) {
+      console.warn(
+        `[posts] JsonLd/frontmatter 메타데이터 불일치: ${post.sourceFile} (${mismatches.join(', ')})`
+      )
+    }
+  }
+}
+
 function validatePostLinks(posts: readonly ParsedPost[]) {
   const slugSet = new Set(posts.map((post) => post.meta.slug))
   const mdxPostLinkPattern = /\[[^\]]+\]\(\/posts\/([a-zA-Z0-9-]+)(?:[#?][^)]*)?\)/g
@@ -100,12 +183,19 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
       throw new Error(`[posts] slug 누락: ${filePath}`)
     }
 
+    const jsonLdMeta = extractJsonLdMeta(content)
+
+    const frontmatterTitle = toStringOrEmpty(data.title)
+    const frontmatterDescription = toStringOrEmpty(data.description)
+    const frontmatterDate = toStringOrEmpty(data.date)
+    const frontmatterTags = normalizeTags(data.tags)
+
     const post = {
-      title: toStringOrEmpty(data.title),
-      description: toStringOrEmpty(data.description),
+      title: frontmatterTitle || jsonLdMeta?.title || '',
+      description: frontmatterDescription || jsonLdMeta?.description || '',
       slug,
-      tags: normalizeTags(data.tags),
-      date: toStringOrEmpty(data.date),
+      tags: frontmatterTags.length > 0 ? frontmatterTags : (jsonLdMeta?.tags ?? []),
+      date: frontmatterDate || jsonLdMeta?.date || '',
     } satisfies PostMeta
 
     return {
@@ -123,6 +213,7 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
     slugSet.add(post.meta.slug)
   }
 
+  validatePostMetadataConsistency(parsedPosts)
   validatePostLinks(parsedPosts)
 
   return parsedPosts
