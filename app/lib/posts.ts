@@ -156,11 +156,20 @@ function validatePostMetadataConsistency(posts: readonly ParsedPost[]) {
 
 function validatePostLinks(posts: readonly ParsedPost[]) {
   const slugSet = new Set(posts.map((post) => post.meta.slug))
-  const mdxPostLinkPattern = /\[[^\]]+\]\(\/posts\/([a-zA-Z0-9-]+)(?:[#?][^)]*)?\)/g
+  const mdxPostLinkPattern =
+    /\[[^\]]+\]\(\/posts\/([a-zA-Z0-9-]+)(\/)?(?:[?#][^)]*)?\)/g
 
   for (const post of posts) {
     for (const match of post.body.matchAll(mdxPostLinkPattern)) {
       const linkedSlug = match[1]
+      const hasTrailingSlash = match[2] === '/'
+
+      if (hasTrailingSlash) {
+        throw new Error(
+          `[posts] 내부 링크 형식 불일치(후행 슬래시 금지): ${post.sourceFile} -> /posts/${linkedSlug}/`
+        )
+      }
+
       if (!slugSet.has(linkedSlug)) {
         throw new Error(
           `[posts] 깨진 내부 링크: ${post.sourceFile} -> /posts/${linkedSlug}`
