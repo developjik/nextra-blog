@@ -29,8 +29,42 @@ function normalizeSearchText(value: string): string {
     .trim()
 }
 
-function compactSearchText(value: string): string {
-  return normalizeSearchText(value).replace(/\s+/g, '')
+const CHOSEONG = [
+  'ㄱ',
+  'ㄲ',
+  'ㄴ',
+  'ㄷ',
+  'ㄸ',
+  'ㄹ',
+  'ㅁ',
+  'ㅂ',
+  'ㅃ',
+  'ㅅ',
+  'ㅆ',
+  'ㅇ',
+  'ㅈ',
+  'ㅉ',
+  'ㅊ',
+  'ㅋ',
+  'ㅌ',
+  'ㅍ',
+  'ㅎ',
+] as const
+
+function toChoseongText(value: string): string {
+  const normalized = normalizeSearchText(value)
+
+  return [...normalized]
+    .map((char) => {
+      const code = char.charCodeAt(0)
+      if (code < 0xac00 || code > 0xd7a3) {
+        return char
+      }
+
+      const choseongIndex = Math.floor((code - 0xac00) / 588)
+      return CHOSEONG[choseongIndex] ?? char
+    })
+    .join('')
 }
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -364,11 +398,8 @@ function PostsPageContent() {
     searchParams,
   ])
 
-  const filteredPosts = useMemo(() => {
-    const normalizedQuery = normalizeSearchText(debouncedSearchQuery)
-    const compactQuery = compactSearchText(debouncedSearchQuery)
-
-    return allPosts.filter((post) => {
+  const indexedPosts = useMemo(() => {
+    return allPosts.map((post) => {
       const searchableText = [
         post.title,
         post.description,
@@ -378,20 +409,50 @@ function PostsPageContent() {
         .map(normalizeSearchText)
         .join(' ')
 
-      const compactSearchableText = compactSearchText(searchableText)
-
-      const matchesSearch =
-        normalizedQuery === '' ||
-        searchableText.includes(normalizedQuery) ||
-        (compactQuery !== '' && compactSearchableText.includes(compactQuery))
-
-      const matchesTags =
-        selectedTags.length === 0 ||
-        selectedTags.every((selectedTag) => post.tags.includes(selectedTag))
-
-      return matchesSearch && matchesTags
+      return {
+        post,
+        searchableText,
+        compactSearchableText: searchableText.replace(/\s+/g, ''),
+        choseongText: toChoseongText(searchableText),
+      }
     })
-  }, [debouncedSearchQuery, selectedTags, allPosts])
+  }, [allPosts])
+
+  const filteredPosts = useMemo(() => {
+    const normalizedQuery = normalizeSearchText(debouncedSearchQuery)
+    const compactQuery = normalizedQuery.replace(/\s+/g, '')
+    const queryTokens = normalizedQuery.split(' ').filter(Boolean)
+    const choseongQuery = toChoseongText(debouncedSearchQuery)
+    const compactChoseongQuery = choseongQuery.replace(/\s+/g, '')
+
+    return indexedPosts
+      .filter(({ post, searchableText, compactSearchableText, choseongText }) => {
+        const matchesNormalizedQuery =
+          normalizedQuery === '' ||
+          searchableText.includes(normalizedQuery) ||
+          (compactQuery !== '' && compactSearchableText.includes(compactQuery))
+
+        const matchesTokenQuery =
+          queryTokens.length === 0 ||
+          queryTokens.every((token) => searchableText.includes(token))
+
+        const compactChoseongText = choseongText.replace(/\s+/g, '')
+        const matchesChoseongQuery =
+          compactChoseongQuery !== '' &&
+          (choseongText.includes(choseongQuery) ||
+            compactChoseongText.includes(compactChoseongQuery))
+
+        const matchesSearch =
+          matchesNormalizedQuery || matchesTokenQuery || matchesChoseongQuery
+
+        const matchesTags =
+          selectedTags.length === 0 ||
+          selectedTags.every((selectedTag) => post.tags.includes(selectedTag))
+
+        return matchesSearch && matchesTags
+      })
+      .map(({ post }) => post)
+  }, [debouncedSearchQuery, selectedTags, indexedPosts])
 
   const handleToggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
