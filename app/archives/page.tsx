@@ -67,6 +67,12 @@ function toChoseongText(value: string): string {
     .join('')
 }
 
+function normalizeTagList(tags: readonly string[]): string[] {
+  return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b, 'ko')
+  )
+}
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
@@ -313,10 +319,7 @@ function PostsPageContent() {
 
   useEffect(() => {
     const query = searchParams.get('q') ?? ''
-    const tags = (searchParams.get('tags') ?? '')
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter(Boolean)
+    const tags = normalizeTagList((searchParams.get('tags') ?? '').split(','))
 
     setSearchQuery(query)
     setSelectedTags(tags)
@@ -375,7 +378,9 @@ function PostsPageContent() {
       params.set('q', debouncedSearchQuery.trim())
     }
 
-    const validTags = selectedTags.filter((tag) => allTags.includes(tag))
+    const validTags = normalizeTagList(
+      selectedTags.filter((tag) => allTags.includes(tag))
+    )
     if (validTags.length === 0) {
       params.delete('tags')
     } else {
@@ -456,7 +461,9 @@ function PostsPageContent() {
 
   const handleToggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag)
+        ? normalizeTagList(prev.filter((t) => t !== tag))
+        : normalizeTagList([...prev, tag])
     )
   }, [])
 

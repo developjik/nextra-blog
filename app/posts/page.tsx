@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { permanentRedirect } from 'next/navigation'
 
 /**
  * Legacy posts index route.
@@ -7,5 +7,5 @@ import { redirect } from 'next/navigation'
  * entrypoint for old internal/external links and redirect permanently.
  */
 export default function LegacyPostsIndexPage() {
-  redirect('/archives')
+  permanentRedirect('/archives')
 }
