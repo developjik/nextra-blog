@@ -156,25 +156,30 @@ function validatePostMetadataConsistency(posts: readonly ParsedPost[]) {
 
 function validatePostLinks(posts: readonly ParsedPost[]) {
   const slugSet = new Set(posts.map((post) => post.meta.slug))
-  const mdxPostLinkPattern =
+  const markdownPostLinkPattern =
     /\[[^\]]+\]\(\/posts\/([a-zA-Z0-9-]+)(\/)?(?:[?#][^)]*)?\)/g
+  const jsxPostLinkPattern =
+    /(?:href|to)\s*=\s*["']\/posts\/([a-zA-Z0-9-]+)(\/)?(?:[?#][^"']*)?["']/g
+
+  const validateLink = (sourceFile: string, linkedSlug: string, hasTrailingSlash: boolean) => {
+    if (hasTrailingSlash) {
+      throw new Error(
+        `[posts] 내부 링크 형식 불일치(후행 슬래시 금지): ${sourceFile} -> /posts/${linkedSlug}/`
+      )
+    }
+
+    if (!slugSet.has(linkedSlug)) {
+      throw new Error(`[posts] 깨진 내부 링크: ${sourceFile} -> /posts/${linkedSlug}`)
+    }
+  }
 
   for (const post of posts) {
-    for (const match of post.body.matchAll(mdxPostLinkPattern)) {
-      const linkedSlug = match[1]
-      const hasTrailingSlash = match[2] === '/'
+    for (const match of post.body.matchAll(markdownPostLinkPattern)) {
+      validateLink(post.sourceFile, match[1], match[2] === '/')
+    }
 
-      if (hasTrailingSlash) {
-        throw new Error(
-          `[posts] 내부 링크 형식 불일치(후행 슬래시 금지): ${post.sourceFile} -> /posts/${linkedSlug}/`
-        )
-      }
-
-      if (!slugSet.has(linkedSlug)) {
-        throw new Error(
-          `[posts] 깨진 내부 링크: ${post.sourceFile} -> /posts/${linkedSlug}`
-        )
-      }
+    for (const match of post.body.matchAll(jsxPostLinkPattern)) {
+      validateLink(post.sourceFile, match[1], match[2] === '/')
     }
   }
 }
