@@ -199,6 +199,13 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
 
     const jsonLdMeta = extractJsonLdMeta(content)
 
+    const frontmatterSlug = toStringOrEmpty(data.slug)
+    if (frontmatterSlug !== '' && frontmatterSlug !== slug) {
+      throw new Error(
+        `[posts] slug 불일치: ${filePath} (frontmatter: ${frontmatterSlug}, path: ${slug})`
+      )
+    }
+
     const frontmatterTitle = toStringOrEmpty(data.title)
     const frontmatterDescription = toStringOrEmpty(data.description)
     const frontmatterDate = toStringOrEmpty(data.date)

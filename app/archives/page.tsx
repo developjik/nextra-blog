@@ -405,20 +405,28 @@ function PostsPageContent() {
 
   const indexedPosts = useMemo(() => {
     return allPosts.map((post) => {
+      const normalizedTitle = normalizeSearchText(post.title)
+      const normalizedDescription = normalizeSearchText(post.description)
+      const normalizedSlug = normalizeSearchText(post.slug)
+      const normalizedTags = post.tags.map(normalizeSearchText)
+
       const searchableText = [
-        post.title,
-        post.description,
-        post.slug,
-        ...post.tags,
-      ]
-        .map(normalizeSearchText)
-        .join(' ')
+        normalizedTitle,
+        normalizedDescription,
+        normalizedSlug,
+        ...normalizedTags,
+      ].join(' ')
 
       return {
         post,
+        normalizedTitle,
+        normalizedDescription,
+        normalizedSlug,
+        normalizedTags,
         searchableText,
         compactSearchableText: searchableText.replace(/\s+/g, ''),
         choseongText: toChoseongText(searchableText),
+        dateTimestamp: new Date(post.date).getTime(),
       }
     })
   }, [allPosts])
@@ -431,7 +439,19 @@ function PostsPageContent() {
     const compactChoseongQuery = choseongQuery.replace(/\s+/g, '')
 
     return indexedPosts
-      .filter(({ post, searchableText, compactSearchableText, choseongText }) => {
+      .map((entry) => {
+        const {
+          post,
+          normalizedTitle,
+          normalizedDescription,
+          normalizedSlug,
+          normalizedTags,
+          searchableText,
+          compactSearchableText,
+          choseongText,
+          dateTimestamp,
+        } = entry
+
         const matchesNormalizedQuery =
           normalizedQuery === '' ||
           searchableText.includes(normalizedQuery) ||
@@ -454,8 +474,43 @@ function PostsPageContent() {
           selectedTags.length === 0 ||
           selectedTags.every((selectedTag) => post.tags.includes(selectedTag))
 
-        return matchesSearch && matchesTags
+        if (!matchesSearch || !matchesTags) {
+          return null
+        }
+
+        if (normalizedQuery === '') {
+          return { post, score: 0, dateTimestamp }
+        }
+
+        let score = 0
+
+        if (normalizedTitle === normalizedQuery) score += 120
+        if (normalizedSlug === normalizedQuery) score += 110
+        if (normalizedTags.some((tag) => tag === normalizedQuery)) score += 100
+
+        if (normalizedTitle.includes(normalizedQuery)) score += 80
+        if (normalizedSlug.includes(normalizedQuery)) score += 70
+        if (normalizedTags.some((tag) => tag.includes(normalizedQuery))) score += 60
+        if (normalizedDescription.includes(normalizedQuery)) score += 35
+
+        if (queryTokens.length > 0) {
+          const titleTokenMatches = queryTokens.filter((token) =>
+            normalizedTitle.includes(token)
+          ).length
+          const tagTokenMatches = queryTokens.filter((token) =>
+            normalizedTags.some((tag) => tag.includes(token))
+          ).length
+          score += titleTokenMatches * 10 + tagTokenMatches * 8
+        }
+
+        if (matchesChoseongQuery) score += 20
+
+        return { post, score, dateTimestamp }
       })
+      .filter((entry): entry is { post: Post; score: number; dateTimestamp: number } =>
+        entry !== null
+      )
+      .sort((a, b) => b.score - a.score || b.dateTimestamp - a.dateTimestamp)
       .map(({ post }) => post)
   }, [debouncedSearchQuery, selectedTags, indexedPosts])
 
