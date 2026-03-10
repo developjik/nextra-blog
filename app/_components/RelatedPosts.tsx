@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import { buildPostPath } from '~/app/lib/routes'
 
 interface Post {
   title: string
@@ -85,7 +86,7 @@ export function RelatedPosts() {
 
         {postsToShow.map((post, index) => (
           <div key={post.slug} className="col-span-12 md:col-span-4 mb-8">
-            <Link href={`/posts/${post.slug}`} className="block card-swiss group">
+            <Link href={buildPostPath(post.slug)} className="block card-swiss group">
               <div className="number-swiss mb-4">0{index + 1}</div>
               <h3 className="text-h3 mb-4 group-hover:text-[var(--color-accent)] transition-colors">
                 {post.title}
