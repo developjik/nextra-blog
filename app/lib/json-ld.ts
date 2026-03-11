@@ -1,3 +1,4 @@
+import { buildPostUrl } from '~/app/lib/routes'
 import { env } from '~/env'
 
 export interface BlogPostingMetadata {
@@ -21,7 +22,7 @@ export function generateBlogPostingJsonLd(
   metadata: BlogPostingMetadata
 ): Record<string, unknown> {
   const baseUrl = env.NEXT_PUBLIC_SITE_URL
-  const url = `${baseUrl}/posts/${metadata.slug}`
+  const url = buildPostUrl(baseUrl, metadata.slug)
 
   return {
     '@context': 'https://schema.org',

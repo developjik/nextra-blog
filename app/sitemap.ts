@@ -1,4 +1,5 @@
 import { getAllPosts } from '~/app/lib/posts'
+import { buildPostUrl } from '~/app/lib/routes'
 import { env } from '~/env'
 
 interface SitemapEntry {
@@ -35,12 +36,18 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     },
     {
       url: `${baseUrl}/about`,
-      lastModified: new Date(),
+      lastModified: latestPostDate,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/archives`,
+      lastModified: latestPostDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/posts`,
       lastModified: latestPostDate,
       changeFrequency: 'daily',
       priority: 0.9,
@@ -54,7 +61,7 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
   ]
 
   const postPages: SitemapEntry[] = posts.map((post) => ({
-    url: `${baseUrl}/posts/${post.slug}`,
+    url: buildPostUrl(baseUrl, post.slug),
     lastModified: post.date ? new Date(post.date) : new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.7,

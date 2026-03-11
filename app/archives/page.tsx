@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { buildPostPath } from '~/app/lib/routes'
 
 interface Post {
   title: string
@@ -94,7 +95,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
 
   return (
     <Link
-      href={`/posts/${post.slug}`}
+      href={buildPostPath(post.slug)}
       className="block"
       style={{
         animation: `swiss-reveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
