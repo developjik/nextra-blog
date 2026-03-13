@@ -174,9 +174,20 @@ function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete="off"
-        className="w-full px-6 py-6 border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-[var(--font-mono)] text-xl uppercase tracking-wider focus:outline-none focus:border-[var(--color-accent)] transition-colors duration-200 placeholder:text-[var(--color-text-meta)]"
+        className="w-full px-6 py-6 pr-20 border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-[var(--font-mono)] text-xl uppercase tracking-wider focus:outline-none focus:border-[var(--color-accent)] transition-colors duration-200 placeholder:text-[var(--color-text-meta)]"
         aria-label="포스트 검색"
       />
+
+      {value.trim() !== '' && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="absolute right-4 top-1/2 -translate-y-1/2 px-3 py-1 border border-[var(--color-border)] text-xs font-[var(--font-mono)] uppercase tracking-wider hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors duration-200"
+          aria-label="검색어 지우기"
+        >
+          초기화
+        </button>
+      )}
     </div>
   )
 }
