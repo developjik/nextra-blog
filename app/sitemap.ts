@@ -47,12 +47,6 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/posts`,
-      lastModified: latestPostDate,
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
       url: `${baseUrl}/tags`,
       lastModified: latestPostDate,
       changeFrequency: 'weekly',
