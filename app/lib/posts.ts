@@ -160,6 +160,9 @@ function validatePostLinks(posts: readonly ParsedPost[]) {
     /\[[^\]]+\]\(\/posts\/([a-zA-Z0-9-]+)(\/)?(?:[?#][^)]*)?\)/g
   const jsxPostLinkPattern =
     /(?:href|to)\s*=\s*["']\/posts\/([a-zA-Z0-9-]+)(\/)?(?:[?#][^"']*)?["']/g
+  const markdownPostsIndexPattern = /\[[^\]]+\]\(\/posts\/?(?:[?#][^)]*)?\)/
+  const jsxPostsIndexPattern =
+    /(?:href|to)\s*=\s*["']\/posts\/?(?:[?#][^"']*)?["']/
 
   const validateLink = (sourceFile: string, linkedSlug: string, hasTrailingSlash: boolean) => {
     if (hasTrailingSlash) {
@@ -181,6 +184,12 @@ function validatePostLinks(posts: readonly ParsedPost[]) {
     for (const match of post.body.matchAll(jsxPostLinkPattern)) {
       validateLink(post.sourceFile, match[1], match[2] === '/')
     }
+
+    if (markdownPostsIndexPattern.test(post.body) || jsxPostsIndexPattern.test(post.body)) {
+      throw new Error(
+        `[posts] 아카이브 인덱스 링크는 /archives를 사용해야 합니다: ${post.sourceFile}`
+      )
+    }
   }
 }
 
@@ -197,8 +206,6 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
       throw new Error(`[posts] slug 누락: ${filePath}`)
     }
 
-    const jsonLdMeta = extractJsonLdMeta(content)
-
     const frontmatterSlug = toStringOrEmpty(data.slug)
     if (frontmatterSlug !== '' && frontmatterSlug !== slug) {
       throw new Error(
@@ -211,12 +218,28 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
     const frontmatterDate = toStringOrEmpty(data.date)
     const frontmatterTags = normalizeTags(data.tags)
 
+    if (frontmatterTitle === '') {
+      throw new Error(`[posts] title 누락(frontmatter): ${filePath}`)
+    }
+
+    if (frontmatterDescription === '') {
+      throw new Error(`[posts] description 누락(frontmatter): ${filePath}`)
+    }
+
+    if (frontmatterDate === '') {
+      throw new Error(`[posts] date 누락(frontmatter): ${filePath}`)
+    }
+
+    if (frontmatterTags.length === 0) {
+      throw new Error(`[posts] tags 누락(frontmatter): ${filePath}`)
+    }
+
     const post = {
-      title: frontmatterTitle || jsonLdMeta?.title || '',
-      description: frontmatterDescription || jsonLdMeta?.description || '',
+      title: frontmatterTitle,
+      description: frontmatterDescription,
       slug,
-      tags: frontmatterTags.length > 0 ? frontmatterTags : (jsonLdMeta?.tags ?? []),
-      date: frontmatterDate || jsonLdMeta?.date || '',
+      tags: frontmatterTags,
+      date: frontmatterDate,
     } satisfies PostMeta
 
     return {
