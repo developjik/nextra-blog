@@ -13,6 +13,9 @@ export interface PostMeta {
   date: string
 }
 
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
 type ParsedPost = {
   meta: PostMeta
   sourceFile: string
@@ -60,22 +63,14 @@ function toSafePostMeta(raw: PostMeta, sourceFile: string): PostMeta {
   const safeTitle = raw.title === '' ? toTitleFromSlug(raw.slug) : raw.title
   const safeDescription = raw.description === '' ? safeTitle : raw.description
 
-  const parsedDate = new Date(raw.date).getTime()
-  const safeDate = Number.isNaN(parsedDate) ? '1970-01-01' : raw.date
-
   if (safeTitle !== raw.title || safeDescription !== raw.description) {
     console.warn(`[posts] 메타데이터 보정: ${sourceFile}`)
-  }
-
-  if (safeDate !== raw.date) {
-    console.warn(`[posts] date 형식 보정: ${sourceFile} (${raw.date})`)
   }
 
   return {
     ...raw,
     title: safeTitle,
     description: safeDescription,
-    date: safeDate,
   }
 }
 
@@ -206,6 +201,10 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
       throw new Error(`[posts] slug 누락: ${filePath}`)
     }
 
+    if (!SLUG_PATTERN.test(slug)) {
+      throw new Error(`[posts] slug 형식 오류(소문자-kebab-case): ${filePath} (${slug})`)
+    }
+
     const frontmatterSlug = toStringOrEmpty(data.slug)
     if (frontmatterSlug !== '' && frontmatterSlug !== slug) {
       throw new Error(
@@ -228,6 +227,16 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
 
     if (frontmatterDate === '') {
       throw new Error(`[posts] date 누락(frontmatter): ${filePath}`)
+    }
+
+    if (!DATE_PATTERN.test(frontmatterDate)) {
+      throw new Error(
+        `[posts] date 형식 오류(YYYY-MM-DD): ${filePath} (${frontmatterDate})`
+      )
+    }
+
+    if (Number.isNaN(new Date(frontmatterDate).getTime())) {
+      throw new Error(`[posts] 유효하지 않은 date: ${filePath} (${frontmatterDate})`)
     }
 
     if (frontmatterTags.length === 0) {
