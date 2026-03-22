@@ -142,7 +142,7 @@ function validatePostMetadataConsistency(posts: readonly ParsedPost[]) {
     }
 
     if (mismatches.length > 0) {
-      console.warn(
+      throw new Error(
         `[posts] JsonLd/frontmatter 메타데이터 불일치: ${post.sourceFile} (${mismatches.join(', ')})`
       )
     }
