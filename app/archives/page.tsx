@@ -344,6 +344,7 @@ function PostsPageContent() {
       try {
         const response = await fetch('/api/posts', {
           signal: controller.signal,
+          cache: 'force-cache',
         })
         if (!response.ok) {
           throw new Error('Failed to load posts')
@@ -380,6 +381,20 @@ function PostsPageContent() {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'))
       .map(([tag]) => tag)
   }, [allPosts])
+
+  useEffect(() => {
+    if (allTags.length === 0) {
+      return
+    }
+
+    const normalized = normalizeTagList(
+      selectedTags.filter((tag) => allTags.includes(tag))
+    )
+
+    if (normalized.join(',') !== selectedTags.join(',')) {
+      setSelectedTags(normalized)
+    }
+  }, [allTags, selectedTags])
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
@@ -450,6 +465,8 @@ function PostsPageContent() {
     const choseongQuery = toChoseongText(debouncedSearchQuery)
     const compactChoseongQuery = choseongQuery.replace(/\s+/g, '')
 
+    const nowTimestamp = Date.now()
+
     return indexedPosts
       .map((entry) => {
         const {
@@ -516,6 +533,23 @@ function PostsPageContent() {
         }
 
         if (matchesChoseongQuery) score += 20
+
+        const titleMatchIndex = normalizedTitle.indexOf(normalizedQuery)
+        if (titleMatchIndex >= 0) {
+          score += Math.max(0, 25 - titleMatchIndex)
+        }
+
+        const descriptionMatchIndex = normalizedDescription.indexOf(normalizedQuery)
+        if (descriptionMatchIndex >= 0) {
+          score += Math.max(0, 10 - descriptionMatchIndex / 5)
+        }
+
+        const ageInDays = Math.max(
+          0,
+          (nowTimestamp - dateTimestamp) / (1000 * 60 * 60 * 24)
+        )
+        const freshnessBoost = Math.max(0, 12 - ageInDays / 30)
+        score += freshnessBoost
 
         return { post, score, dateTimestamp }
       })
