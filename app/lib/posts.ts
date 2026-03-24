@@ -112,7 +112,7 @@ function validatePostMetadataConsistency(posts: readonly ParsedPost[]) {
     const jsonLdMeta = extractJsonLdMeta(post.body)
 
     if (!jsonLdMeta) {
-      continue
+      throw new Error(`[posts] JsonLd 메타데이터 누락: ${post.sourceFile}`)
     }
 
     const mismatches: string[] = []
