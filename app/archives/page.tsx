@@ -585,7 +585,7 @@ function PostsPageContent() {
               style={{ color: 'var(--color-text-secondary)' }}
               aria-live="polite"
             >
-              {filteredPosts.length}개 중 {allPosts.length}개 표시됨
+전체 {allPosts.length}개 중 {filteredPosts.length}개 표시됨
             </p>
             {selectedTags.length > 0 && (
               <div className="flex items-center gap-2 text-sm">
