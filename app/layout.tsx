@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono, Space_Grotesk, Syne } from 'next/font/google'
 import Script from 'next/script'
 import { Head } from 'nextra/components'
@@ -35,8 +36,34 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '500'],
 })
 
-export const metadata = {
-  title: 'Developjik Blog',
+const siteName = 'Developjik Blog'
+const siteDescription =
+  '프론트엔드 개발자를 위한 실전 기술 아티클과 커리어 성장 인사이트를 정리하는 developjik 기술 블로그'
+const siteUrl = 'https://developjik.dev'
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: siteName,
+    template: `%s | ${siteName}`,
+  },
+  description: siteDescription,
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'ko_KR',
+    url: siteUrl,
+    siteName,
+    title: siteName,
+    description: siteDescription,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteName,
+    description: siteDescription,
+  },
 }
 
 type RootLayoutProps = {
@@ -57,7 +84,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         <Layout>
           <Navbar />
 
-          <div id="main-content">{children}</div>
+          <main id="main-content" tabIndex={-1}>
+            {children}
+          </main>
 
           <Footer />
         </Layout>
