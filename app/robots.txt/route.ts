@@ -16,10 +16,10 @@ Allow: /about
 Disallow: /api/
 Disallow: /_next/
 Disallow: /_pagefind/
-Disallow: /*?*
 
 # Sitemap location
 Sitemap: ${baseUrl}/sitemap.xml
+Host: ${baseUrl}
 
 # Additional crawl delay (be nice to servers)
 Crawl-delay: 1
@@ -70,7 +70,7 @@ Disallow: /
   return new Response(robotsTxt, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+      'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800', // 24시간 캐시 + 7일 SWR
     },
   })
 }

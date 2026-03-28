@@ -585,7 +585,7 @@ function PostsPageContent() {
               style={{ color: 'var(--color-text-secondary)' }}
               aria-live="polite"
             >
-전체 {allPosts.length}개 중 {filteredPosts.length}개 표시됨
+              전체 {allPosts.length}개 중 {filteredPosts.length}개 표시됨
             </p>
             {selectedTags.length > 0 && (
               <div className="flex items-center gap-2 text-sm">
@@ -609,13 +609,16 @@ function PostsPageContent() {
         />
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            aria-live="polite"
+          >
             {[...Array(6)].map((_, i) => (
               <PostCardSkeleton key={`skeleton-${i}`} />
             ))}
           </div>
         ) : error ? (
-          <div className="py-20 text-center">
+          <div className="py-20 text-center" role="alert" aria-live="assertive">
             <h3 className="text-h2 mb-4 font-[var(--font-heading)] uppercase">
               오류
             </h3>
