@@ -3,15 +3,10 @@
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { parsePostMetaArray, type PostMeta } from '~/app/lib/post-meta'
 import { buildPostPath } from '~/app/lib/routes'
 
-interface Post {
-  title: string
-  description: string
-  slug: string
-  tags: readonly string[]
-  date: string
-}
+type Post = PostMeta
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
@@ -349,7 +344,7 @@ function PostsPageContent() {
         if (!response.ok) {
           throw new Error('Failed to load posts')
         }
-        const data = (await response.json()) as Post[]
+        const data = parsePostMetaArray(await response.json())
         setAllPosts(data)
       } catch (err) {
         if ((err as Error).name === 'AbortError') {
