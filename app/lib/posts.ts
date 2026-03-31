@@ -4,14 +4,7 @@ import { readFileSync } from 'fs'
 import { glob } from 'glob'
 import matter from 'gray-matter'
 import { cache } from 'react'
-
-export interface PostMeta {
-  title: string
-  description: string
-  slug: string
-  tags: readonly string[]
-  date: string
-}
+import type { PostMeta } from '~/app/lib/post-meta'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/

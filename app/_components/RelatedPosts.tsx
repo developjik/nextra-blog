@@ -3,18 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import { parsePostMetaArray, type PostMeta } from '~/app/lib/post-meta'
 import { buildPostPath } from '~/app/lib/routes'
 
-interface Post {
-  title: string
-  description: string
-  slug: string
-  tags: readonly string[]
-}
+type RelatedPost = Pick<PostMeta, 'title' | 'description' | 'slug' | 'tags'>
 
 export function RelatedPosts() {
   const pathname = usePathname()
-  const [allPosts, setAllPosts] = useState<Post[]>([])
+  const [allPosts, setAllPosts] = useState<RelatedPost[]>([])
 
   useEffect(() => {
     async function loadPosts() {
@@ -23,7 +19,14 @@ export function RelatedPosts() {
         if (!response.ok) {
           return
         }
-        const data = (await response.json()) as Post[]
+        const data = parsePostMetaArray(await response.json()).map(
+          ({ title, description, slug, tags }) => ({
+            title,
+            description,
+            slug,
+            tags,
+          })
+        )
         setAllPosts(data)
       } catch {
         // 관련 포스트는 보조 기능이므로 실패 시 조용히 무시
