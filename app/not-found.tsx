@@ -32,7 +32,7 @@ export default function NotFound() {
             홈으로 이동
           </Link>
           <Link
-            href="/posts"
+            href="/archives"
             className="rounded-lg border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             포스트 목록
