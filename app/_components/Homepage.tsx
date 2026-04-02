@@ -1,5 +1,6 @@
 'use client'
 
+import { FEATURED_POSTS } from '~/app/lib/featured-posts'
 import { ScrollReveal } from './index'
 
 const featuredProjects = [
@@ -24,22 +25,6 @@ const featuredProjects = [
   },
 ]
 
-const featuredPosts = [
-  {
-    title: 'CloudFront의 숨은 힘: 캐싱 없이도 좋아지는 프론트엔드 성능',
-    href: '/posts/cloudfront-hidden-power-without-cache',
-  },
-  {
-    title:
-      '문을 없애고 테스트하기: 프론트엔드 코드 품질을 올리는 리팩터링 관점',
-    href: '/posts/remove-branching-improve-testability',
-  },
-  {
-    title:
-      '좋은 타입은 선언 수가 아니라 경계에서 나온다: enum 남용에서 벗어나기',
-    href: '/posts/types-boundary-over-enum',
-  },
-]
 
 export function Homepage() {
   return (
@@ -140,7 +125,7 @@ export function Homepage() {
 
           <div className="col-span-12 md:col-span-8">
             <div className="space-y-4">
-              {featuredPosts.map((post) => (
+              {FEATURED_POSTS.map((post) => (
                 <a
                   key={post.href}
                   href={post.href}

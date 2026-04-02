@@ -181,6 +181,28 @@ function validatePostLinks(posts: readonly ParsedPost[]) {
   }
 }
 
+async function validateArchiveEntryLinksOutsidePostsDir() {
+  const files = await glob('**/*.tsx', {
+    cwd: 'app',
+    ignore: ['posts/page.tsx'],
+  })
+
+  const postsIndexPattern = /(?:href|to)\s*=\s*["']\/posts\/?(?:[?#][^"']*)?["']/
+
+  for (const file of files) {
+    const filePath = `app/${file}`
+    const fileContent = readFileSync(filePath, 'utf-8')
+
+    if (!postsIndexPattern.test(fileContent)) {
+      continue
+    }
+
+    throw new Error(
+      `[posts] 아카이브 인덱스 링크는 /archives를 사용해야 합니다: ${filePath}`
+    )
+  }
+}
+
 const loadAllPosts = async (): Promise<PostMeta[]> => {
   const files = await glob('**/page.mdx', { cwd: 'app/posts' })
 
@@ -261,6 +283,7 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
 
   validatePostMetadataConsistency(parsedPosts)
   validatePostLinks(parsedPosts)
+  await validateArchiveEntryLinksOutsidePostsDir()
 
   return parsedPosts
     .map((post) => post.meta)
