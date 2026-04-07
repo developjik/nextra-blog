@@ -163,14 +163,18 @@ function SearchInput({
 }) {
   return (
     <div className="relative mb-8">
+      <label htmlFor="archive-search" className="sr-only">
+        포스트 검색
+      </label>
       <input
+        id="archive-search"
         type="search"
         placeholder="검색어 입력..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete="off"
         className="w-full px-6 py-6 pr-20 border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-[var(--font-mono)] text-xl uppercase tracking-wider focus:outline-none focus:border-[var(--color-accent)] transition-colors duration-200 placeholder:text-[var(--color-text-meta)]"
-        aria-label="포스트 검색"
+        aria-describedby="archive-result-summary"
       />
 
       {value.trim() !== '' && (
@@ -576,6 +580,7 @@ function PostsPageContent() {
           <div className="divider-swiss-full" />
           <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <p
+              id="archive-result-summary"
               className="text-body"
               style={{ color: 'var(--color-text-secondary)' }}
               aria-live="polite"
