@@ -3,6 +3,7 @@ import 'server-only'
 import { readFileSync } from 'fs'
 import { glob } from 'glob'
 import matter from 'gray-matter'
+import { unstable_cache } from 'next/cache'
 import { cache } from 'react'
 import type { PostMeta } from '~/app/lib/post-meta'
 
@@ -294,4 +295,9 @@ const loadAllPosts = async (): Promise<PostMeta[]> => {
     })
 }
 
-export const getAllPosts = cache(loadAllPosts)
+const loadAllPostsWithRevalidate = unstable_cache(loadAllPosts, ['posts:all:v1'], {
+  revalidate: 60 * 60,
+  tags: ['posts'],
+})
+
+export const getAllPosts = cache(loadAllPostsWithRevalidate)
