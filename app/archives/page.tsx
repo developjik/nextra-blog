@@ -338,9 +338,31 @@ function PostsPageContent() {
 
   useEffect(() => {
     const controller = new AbortController()
+    const cacheKey = 'archives:posts:v1'
+    const maxAgeMs = 1000 * 60 * 60
 
     async function loadPosts() {
       try {
+        const cached = sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached) as {
+            timestamp?: number
+            posts?: unknown
+          }
+
+          if (
+            typeof parsed.timestamp === 'number' &&
+            Date.now() - parsed.timestamp < maxAgeMs
+          ) {
+            const cachedPosts = parsePostMetaArray(parsed.posts)
+            if (cachedPosts.length > 0) {
+              setAllPosts(cachedPosts)
+              setIsLoading(false)
+              return
+            }
+          }
+        }
+
         const response = await fetch('/api/posts', {
           signal: controller.signal,
           cache: 'force-cache',
@@ -348,8 +370,18 @@ function PostsPageContent() {
         if (!response.ok) {
           throw new Error('Failed to load posts')
         }
-        const data = parsePostMetaArray(await response.json())
+
+        const json = await response.json()
+        const data = parsePostMetaArray(json)
         setAllPosts(data)
+
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            timestamp: Date.now(),
+            posts: data,
+          })
+        )
       } catch (err) {
         if ((err as Error).name === 'AbortError') {
           return
