@@ -8,21 +8,21 @@ export type FeaturedPostLink = {
 
 const featuredPostLinks: readonly FeaturedPostLink[] = [
   {
-    slug: 'cloudfront-hidden-power-without-cache',
-    title: 'CloudFront의 숨은 힘: 캐싱 없이도 좋아지는 프론트엔드 성능',
-    description: 'CDN/전송 계층 관점에서 성능·비용 최적화를 설명한 글',
+    slug: 'frontend-performance-budget-release-gate',
+    title: '프론트엔드 성능 예산을 릴리즈 게이트로 운영하는 법',
+    description: 'Core Web Vitals와 번들 예산을 PR 판단 기준으로 연결한 글',
   },
   {
-    slug: 'remove-branching-improve-testability',
-    title:
-      '문을 없애고 테스트하기: 프론트엔드 코드 품질을 올리는 리팩터링 관점',
-    description: '분기 축소와 책임 분리로 테스트 가능성을 높이는 실전 접근',
+    slug: 'frontend-accessibility-regression-checklist',
+    title: '접근성 회귀를 막는 프론트엔드 PR 체크리스트',
+    description:
+      '키보드, 포커스, 이름, 상태, 에러 메시지를 PR 리뷰로 고정한 글',
   },
   {
-    slug: 'types-boundary-over-enum',
-    title:
-      '좋은 타입은 선언 수가 아니라 경계에서 나온다: enum 남용에서 벗어나기',
-    description: 'API/도메인/UI 경계 분리를 중심으로 타입 설계를 정리한 글',
+    slug: 'ai-assisted-frontend-pr-workflow-case-study',
+    title: 'AI-assisted 프론트엔드 PR workflow 사례 정리',
+    description:
+      '입력 계약, 변경 범위, 검증 명령, 리뷰 로그를 하나로 묶은 사례',
   },
 ]
 
