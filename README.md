@@ -2,6 +2,19 @@
 
 [Next.js](https://nextjs.org)와 [Nextra](https://nextra.site)로 구축된 현대적인 개인 블로그입니다. MDX를 사용해 콘텐츠를 작성하고, Giscus를 통해 댓글 기능을 제공합니다.
 
+## 🔗 Live
+
+- Production: [https://developjik-nextra-blog.vercel.app](https://developjik-nextra-blog.vercel.app)
+- Repository: [https://github.com/developjik/nextra-blog](https://github.com/developjik/nextra-blog)
+
+## 🎯 Engineering Positioning
+
+이 저장소는 단순 블로그 템플릿이 아니라 프론트엔드 실무 역량을 보여주는 공개 작업물입니다.
+
+- **콘텐츠 아키텍처**: MDX 기반 포스트 구조, 태그, 검색, 댓글 흐름을 유지보수하기 쉽게 구성
+- **제품 품질**: 다크/라이트 모드, 반응형 레이아웃, 한국어 콘텐츠 최적화, Vercel preview/deploy 흐름 운영
+- **AI workflow**: 디자인 시스템 변경, 배포 리스크, PR 리뷰, 디버깅 같은 실무형 AI 활용 플레이북을 콘텐츠로 축적
+
 ## 🚀 주요 기능
 
 - **Nextra v4.6.1**: MDX 기반의 빠른 정적 사이트 생성
